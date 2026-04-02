@@ -3,15 +3,9 @@ const path = require("path");
 const session = require("express-session");
 
 const app = express();
-
-/* =========================
-   ⚙️ PORT (RENDER FIX)
-========================= */
 const PORT = process.env.PORT || 3000;
 
-/* =========================
-   🔧 MIDDLEWARE
-========================= */
+/* MIDDLEWARE */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -21,24 +15,31 @@ app.use(session({
   saveUninitialized: true
 }));
 
-/* 🔥 SERVE STATIC FILES */
 app.use(express.static(__dirname));
 
-/* =========================
-   🧠 DATA STORAGE
-========================= */
+/* DATA STORAGE */
 let users = [];
 let sosData = [];
 let categoryLogs = [];
 let trackingData = [];
 
 /* =========================
-   🔐 AUTH
+   AUTH
 ========================= */
 
 app.post("/register", (req, res) => {
   const { username, password } = req.body;
-  users.push({ username, password });
+
+  const user = {
+    username,
+    password,
+    time: new Date().toLocaleString()
+  };
+
+  users.push(user);
+
+  console.log("👤 Registered:", user);
+
   res.json({ status: "registered" });
 });
 
@@ -56,13 +57,11 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.redirect("/");
-  });
+  req.session.destroy(() => res.redirect("/"));
 });
 
 /* =========================
-   🌐 ROUTES
+   ROUTES
 ========================= */
 
 app.get("/", (req, res) => {
@@ -74,7 +73,7 @@ app.get("/dashboard", (req, res) => {
 });
 
 /* =========================
-   🚨 CATEGORY TRACK
+   CATEGORY
 ========================= */
 app.post("/category", (req, res) => {
 
@@ -85,13 +84,13 @@ app.post("/category", (req, res) => {
 
   categoryLogs.push(data);
 
-  console.log("📌 CATEGORY:", data);
+  console.log("📌 Category:", data);
 
-  res.json({ success: true });
+  res.json({ ok: true });
 });
 
 /* =========================
-   🚨 SOS
+   SOS
 ========================= */
 app.post("/sos", (req, res) => {
 
@@ -112,7 +111,7 @@ app.post("/sos", (req, res) => {
 });
 
 /* =========================
-   📍 TRACKING
+   TRACKING
 ========================= */
 app.post("/track", (req, res) => {
 
@@ -123,37 +122,11 @@ app.post("/track", (req, res) => {
 
   trackingData.push(data);
 
-  console.log("📍 TRACK:", data);
-
   res.json({ ok: true });
 });
 
 /* =========================
-   🤖 AI CHAT
-========================= */
-app.post("/chat", (req, res) => {
-
-  const { message } = req.body;
-
-  let reply = "I am here to help you.";
-
-  if(message.toLowerCase().includes("help")){
-    reply = "Stay calm. Help is on the way.";
-  }
-
-  if(message.toLowerCase().includes("fire")){
-    reply = "Move away from fire and call emergency services.";
-  }
-
-  if(message.toLowerCase().includes("injury")){
-    reply = "Apply first aid and seek medical help.";
-  }
-
-  res.json({ reply });
-});
-
-/* =========================
-   📡 ADMIN APIs
+   ADMIN APIs
 ========================= */
 
 app.get("/admin/sos", (req, res) => {
@@ -168,9 +141,14 @@ app.get("/admin/track", (req, res) => {
   res.json(trackingData);
 });
 
+app.get("/admin/users", (req, res) => {
+  res.json(users);
+});
+
 /* =========================
-   🚀 START SERVER
+   START
 ========================= */
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
