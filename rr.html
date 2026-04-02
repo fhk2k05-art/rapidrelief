@@ -17,7 +17,6 @@ body {
   url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
 
   background-size:cover;
-  background-position:center;
 }
 
 /* NAV */
@@ -74,6 +73,20 @@ nav {
   border-radius:10px;
 }
 
+/* NEARBY */
+.nearby {
+  padding:20px;
+}
+
+.nearby button {
+  margin:5px;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#00c6ff;
+  color:white;
+}
+
 </style>
 </head>
 
@@ -99,12 +112,24 @@ nav {
 
 <div id="map"></div>
 
+<!-- 🔥 NEARBY FEATURE -->
+<div class="nearby">
+  <h3>📍 Nearby Help</h3>
+
+  <button onclick="findPlace('hospital')">🚑 Hospital</button>
+  <button onclick="findPlace('police')">🚓 Police</button>
+  <button onclick="findPlace('fire_station')">🔥 Fire</button>
+
+  <p id="result"></p>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
 let selectedType = "Medical";
 let map;
+let markers=[];
 
 /* MAP INIT */
 navigator.geolocation.getCurrentPosition(pos=>{
@@ -142,23 +167,13 @@ function selectType(el,type){
   /* SEND CATEGORY DATA */
   navigator.geolocation.getCurrentPosition(async pos=>{
 
-    let ip="unknown";
-
-    try{
-      let res=await fetch("https://api.ipify.org?format=json");
-      let data=await res.json();
-      ip=data.ip;
-    }catch{}
-
     fetch("/category",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         type,
         lat:pos.coords.latitude,
-        lon:pos.coords.longitude,
-        ip,
-        time:new Date().toLocaleString()
+        lon:pos.coords.longitude
       })
     });
 
@@ -192,9 +207,7 @@ function sendSOS(){
 function startTracking(){
 
   setInterval(()=>{
-
     navigator.geolocation.getCurrentPosition(pos=>{
-
       fetch("/track",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -204,12 +217,63 @@ function startTracking(){
           time:new Date().toLocaleString()
         })
       });
-
     });
-
   },5000);
 
   alert("📍 Tracking started");
+}
+
+/* 🔍 NEARBY */
+function findPlace(type){
+
+  document.getElementById("result").innerText = "Searching... 🔍";
+
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    let category = {
+      hospital: "healthcare.hospital",
+      police: "service.police",
+      fire_station: "service.fire_station"
+    }[type];
+
+    const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=10&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`;
+
+    fetch(url)
+    .then(res => res.json())
+    .then(data => {
+
+      if(!data.features || data.features.length === 0){
+        document.getElementById("result").innerText = "No nearby found ❌";
+        return;
+      }
+
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      let text="";
+
+      data.features.forEach(f => {
+
+        const coords = f.geometry.coordinates;
+        const name = f.properties.name || "Unknown";
+
+        text += "• " + name + "\n";
+
+        let marker = L.marker([coords[1], coords[0]])
+          .addTo(map)
+          .bindPopup(name);
+
+        markers.push(marker);
+      });
+
+      document.getElementById("result").innerText = text;
+
+    });
+
+  });
 }
 
 /* LOGOUT */
