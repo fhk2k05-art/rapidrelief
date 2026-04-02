@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>🚨 RapidRelief PRO Admin</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+
+body {
+  margin:0;
+  font-family:'Segoe UI',sans-serif;
+  background:#020617;
+  color:white;
+}
+
+/* HEADER */
+.header {
+  display:flex;
+  justify-content:space-between;
+  padding:15px 25px;
+  background:#020617;
+  border-bottom:1px solid #334155;
+}
+
+.title {
+  font-size:20px;
+  font-weight:bold;
+}
+
+.counter {
+  font-size:14px;
+  opacity:0.7;
+}
+
+/* LAYOUT */
+.container {
+  display:flex;
+}
+
+/* LEFT LIST */
+.left {
+  width:40%;
+  padding:15px;
+  overflow-y:auto;
+  height:90vh;
+}
+
+/* RIGHT MAP */
+.right {
+  width:60%;
+}
+
+#map {
+  height:90vh;
+}
+
+/* CARD */
+.card {
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  animation:fadeIn 0.4s;
+}
+
+/* COLORS */
+.medical { background:#2563eb; }
+.fire { background:#dc2626; }
+.crime { background:#eab308; color:black; }
+.mechanical { background:#f97316; }
+
+/* NEW FLASH */
+.new {
+  border:2px solid white;
+}
+
+/* ANIMATION */
+@keyframes fadeIn {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1;}
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="title">🚨 PRO SOS MONITOR</div>
+  <div class="counter">Total SOS: <span id="count">0</span></div>
+</div>
+
+<div class="container">
+
+  <div class="left" id="sosList"></div>
+
+  <div class="right">
+    <div id="map"></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+let map;
+let markers=[];
+let prevCount=0;
+
+/* MAP INIT */
+map = L.map('map').setView([10.8505,76.2711], 7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+/* SOUND */
+function playAlarm(){
+  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+}
+
+/* LOAD SOS */
+function loadSOS(){
+
+  fetch("/admin/sos")
+  .then(res=>res.json())
+  .then(data=>{
+
+    document.getElementById("count").innerText = data.length;
+
+    /* 🔊 NEW ALERT SOUND */
+    if(data.length > prevCount){
+      playAlarm();
+    }
+    prevCount = data.length;
+
+    if(data.length === 0){
+      document.getElementById("sosList").innerHTML = "No SOS 🚫";
+      return;
+    }
+
+    let html="";
+
+    markers.forEach(m=>map.removeLayer(m));
+    markers=[];
+
+    data.slice().reverse().forEach((s,i)=>{
+
+      let cls="";
+
+      if(s.type==="Medical") cls="medical";
+      if(s.type==="Fire") cls="fire";
+      if(s.type==="Crime") cls="crime";
+      if(s.type==="Mechanical") cls="mechanical";
+
+      if(i===0) cls+=" new";
+
+      html += `
+        <div class="card ${cls}">
+          🚨 <b>${s.type}</b><br>
+          📍 ${s.lat}, ${s.lon}<br>
+          🕒 ${s.time}
+        </div>
+      `;
+
+      /* MAP MARKER */
+      if(s.lat && s.lon){
+        let marker = L.marker([s.lat, s.lon])
+          .addTo(map)
+          .bindPopup(s.type);
+
+        markers.push(marker);
+      }
+
+    });
+
+    document.getElementById("sosList").innerHTML = html;
+
+  });
+
+}
+
+/* AUTO REFRESH */
+setInterval(loadSOS, 3000);
+loadSOS();
+
+</script>
+
+</body>
+</html>

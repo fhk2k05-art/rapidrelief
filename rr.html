@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RapidRelief Dashboard</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+
+body {
+  margin:0;
+  font-family:'Segoe UI',sans-serif;
+
+  background:
+    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+    url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
+
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
+
+  color:white;
+
+  transition: background 0.8s ease-in-out, opacity 0.4s ease;
+}
+
+/* NAVBAR */
+nav {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 25px;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(10px);
+}
+
+.logo-box {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:bold;
+}
+
+.logo-box img {
+  width:40px;
+  border-radius:10px;
+}
+
+.nav-right {
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.profile img {
+  width:30px;
+  border-radius:50%;
+}
+
+.logout {
+  background:red;
+  color:white;
+  border:none;
+  padding:6px 12px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.main {
+  padding:20px;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:15px;
+}
+
+.card {
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(10px);
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
+  cursor:pointer;
+}
+
+.card.active {
+  background:#00c6ff;
+}
+
+/* SOS */
+.sos {
+  margin-top:20px;
+  padding:12px 25px;
+  font-size:16px;
+  background:red;
+  border:none;
+  border-radius:25px;
+  cursor:pointer;
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
+  animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {transform:scale(1);}
+  50% {transform:scale(1.05);}
+}
+
+#map {
+  height:300px;
+  margin-top:20px;
+  border-radius:15px;
+}
+
+.nearby {
+  margin-top:20px;
+}
+
+.nearby button {
+  margin:5px;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#00c6ff;
+}
+
+/* MOOD */
+.mood {
+  margin-top:20px;
+  background:rgba(255,255,255,0.1);
+  padding:15px;
+  border-radius:12px;
+}
+
+.mood button {
+  margin:5px;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#00c6ff;
+  cursor:pointer;
+}
+
+.chat {
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  background:rgba(0,0,0,0.7);
+  padding:10px;
+  border-radius:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo-box">
+    <img src="logo.png">
+    RapidRelief
+  </div>
+
+  <div class="nav-right">
+    <span>🔔</span>
+    <span>⚙️</span>
+    <div class="profile">
+      <img src="https://i.pravatar.cc/100">
+    </div>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+
+<h3>Emergency Dashboard</h3>
+
+<div class="grid">
+  <div class="card" onclick="selectType(this,'Medical')">🚑 Medical</div>
+  <div class="card" onclick="selectType(this,'Fire')">🔥 Fire</div>
+  <div class="card" onclick="selectType(this,'Crime')">🚓 Crime</div>
+  <div class="card" onclick="selectType(this,'Mechanical')">🛠 Mechanical</div>
+</div>
+
+<button class="sos" onclick="sendSOS()">🚨 SOS</button>
+
+<div id="map"></div>
+
+<div class="nearby">
+  <h3>📍 Nearby Services</h3>
+  <button onclick="findPlace('hospital')">Hospital</button>
+  <button onclick="findPlace('police')">Police</button>
+  <button onclick="findPlace('fire_station')">Fire</button>
+  <p id="result"></p>
+</div>
+
+<div class="mood">
+  <h3>🧠 Mood / Stress Help</h3>
+  <button onclick="showMood('stress')">😟 Stressed</button>
+  <button onclick="showMood('panic')">😨 Panic</button>
+  <p id="moodResult"></p>
+</div>
+
+</div>
+
+<div class="chat">
+  <input id="msg" placeholder="Ask AI...">
+  <button onclick="chat()">Send</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+let map, markers=[];
+let userLat,userLon;
+let selectedType="Medical";
+
+/* LOGOUT */
+function logout(){
+  window.location.href="/logout";
+}
+
+/* MAP */
+navigator.geolocation.getCurrentPosition(pos=>{
+  userLat=pos.coords.latitude;
+  userLon=pos.coords.longitude;
+
+  map=L.map('map').setView([userLat,userLon],14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+  L.marker([userLat,userLon]).addTo(map).bindPopup("You are here").openPopup();
+});
+
+/* 🔥 CATEGORY + BACKGROUND SWITCH */
+function selectType(el,type){
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  selectedType=type;
+
+  let bg="";
+
+  if(type==="Medical"){
+    bg="https://images.unsplash.com/photo-1586773860418-d37222d8fce3";
+  }
+
+  if(type==="Fire"){
+    bg="https://images.unsplash.com/photo-1603398938378-e54eab446dde";
+  }
+
+  if(type==="Crime"){
+    bg="https://images.unsplash.com/photo-1504215680853-026ed2a45def";
+  }
+
+  if(type==="Mechanical"){
+    bg="https://images.unsplash.com/photo-1515923256482-1c04580b477c";
+  }
+
+  document.body.style.opacity = 0.85;
+
+  setTimeout(()=>{
+    document.body.style.background =
+      `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${bg}')`;
+
+    document.body.style.backgroundSize="cover";
+    document.body.style.backgroundPosition="center";
+    document.body.style.backgroundAttachment="fixed";
+
+    document.body.style.opacity = 1;
+  },200);
+}
+
+/* DEFAULT LOAD */
+window.onload = () => {
+  const firstCard = document.querySelector(".card");
+  selectType(firstCard, "Medical");
+};
+
+/* SOS */
+function sendSOS(){
+  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+    fetch("/sos",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        lat:pos.coords.latitude,
+        lon:pos.coords.longitude,
+        type:selectedType
+      })
+    }).then(()=>alert("🚨 SOS SENT"));
+  });
+}
+
+/* NEARBY */
+function findPlace(type){
+
+  document.getElementById("result").innerText="Searching...";
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+
+    const lat=pos.coords.latitude;
+    const lon=pos.coords.longitude;
+
+    let category;
+
+    if(type==="hospital") category="healthcare.hospital";
+    if(type==="police") category="service.police";
+    if(type==="fire_station") category="service.fire_station";
+
+    const url=`https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=10&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`;
+
+    fetch(url)
+    .then(res=>res.json())
+    .then(data=>{
+
+      if(!data.features || data.features.length===0){
+        document.getElementById("result").innerText="No nearby found ❌";
+        return;
+      }
+
+      markers.forEach(m=>map.removeLayer(m));
+      markers=[];
+
+      let nearest = data.features[0];
+      let minDist = distance(lat, lon, nearest.geometry.coordinates[1], nearest.geometry.coordinates[0]);
+
+      data.features.forEach(f=>{
+        const coords=f.geometry.coordinates;
+        const name=f.properties.name||"Unknown";
+
+        const d = distance(lat, lon, coords[1], coords[0]);
+
+        if(d < minDist){
+          minDist = d;
+          nearest = f;
+        }
+
+        const marker=L.marker([coords[1],coords[0]]).addTo(map).bindPopup(name);
+        markers.push(marker);
+      });
+
+      const name = nearest.properties.name || "Unknown";
+
+      document.getElementById("result").innerText =
+        `Nearest ${type.replace("_"," ")}: ${name} (${minDist.toFixed(2)} km)`;
+
+    });
+  });
+}
+
+/* DISTANCE */
+function distance(lat1, lon1, lat2, lon2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+
+  const a=Math.sin(dLat/2)**2 +
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+    Math.sin(dLon/2)**2;
+
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+/* MOOD */
+function showMood(type){
+  let text="";
+
+  if(type==="stress"){
+    text="🧘 Inhale 4s, hold 4s, exhale 6s. Repeat.\n💡 Relax and drink water.";
+  }
+
+  if(type==="panic"){
+    text="⚠️ You are safe.\nFocus on breathing.\nCall someone you trust.";
+  }
+
+  document.getElementById("moodResult").innerText=text;
+}
+
+/* CHAT */
+function chat(){
+  const msg=document.getElementById("msg").value;
+
+  fetch("/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:msg})
+  })
+  .then(res=>res.json())
+  .then(data=>alert(data.reply));
+}
+
+</script>
+
+</body>
+</html>

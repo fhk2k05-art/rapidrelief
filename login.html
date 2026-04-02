@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RapidRelief Login</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background:url("https://images.unsplash.com/photo-1584433144859-1fc3ab64a957") center/cover;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.box {
+  background: rgba(0,0,0,0.85);
+  padding:30px;
+  border-radius:10px;
+  text-align:center;
+  color:white;
+  width:320px;
+}
+
+.logo {
+  width:80px;
+  margin-bottom:10px;
+}
+
+input {
+  display:block;
+  margin:10px auto;
+  padding:10px;
+  width:90%;
+  border-radius:5px;
+  border:none;
+}
+
+button {
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.login { background:#00bcd4; color:white; }
+.register { background:#28a745; color:white; }
+.face { background:orange; color:black; }
+
+video {
+  margin-top:10px;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <img src="logo.png" class="logo">
+
+  <h2>🚑 RapidRelief Login</h2>
+
+  <input id="username" placeholder="Username (optional)">
+  <input id="password" type="password" placeholder="Password">
+
+  <button class="login" onclick="login()">Login</button>
+  <button class="register" onclick="register()">Register</button>
+
+  <hr>
+
+  <h3>Face Login</h3>
+  <video id="video" width="250" height="200" autoplay muted></video>
+  <br>
+
+  <button class="face" onclick="faceRegister()">Register Face</button>
+  <button class="face" onclick="faceLogin()">Use Face</button>
+
+</div>
+
+<script>
+const video = document.getElementById("video");
+
+/* 🎥 CAMERA */
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => video.srcObject = stream)
+.catch(()=>alert("Camera permission denied ❌"));
+
+/* 🔐 LOGIN */
+function login(){
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  fetch("/login", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ username, password })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.status==="success"){
+      window.location.href="/dashboard";
+    } else {
+      alert("Login failed ❌");
+    }
+  });
+}
+
+/* 📝 REGISTER */
+function register(){
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  fetch("/register", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ username, password })
+  })
+  .then(()=>alert("Registered ✅"));
+}
+
+/* 👤 FACE REGISTER */
+function faceRegister(){
+  if(video.videoWidth > 0){
+    localStorage.setItem("faceRegistered","true");
+    alert("Face Registered ✅");
+  } else {
+    alert("Camera not ready ❌");
+  }
+}
+
+/* 🔓 FACE LOGIN (FORCED REDIRECT) */
+function faceLogin(){
+  const username = document.getElementById("username").value;
+
+  if(!localStorage.getItem("faceRegistered")){
+    alert("No face registered ❌");
+    return;
+  }
+
+  if(video.videoWidth > 0){
+
+    fetch("/face-login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ username })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+      if(data.status==="success"){
+        alert("Face matched ✅");
+
+        // 🔥 FORCE REDIRECT ALWAYS
+        window.location.href="/dashboard";
+
+      } else {
+        alert("Please register first ❌");
+      }
+    });
+
+  } else {
+    alert("Face not detected ❌");
+  }
+}
+</script>
+
+</body>
+</html>
