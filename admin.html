@@ -1,57 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Admin PRO</title>
+<title>RapidRelief Admin Ultimate</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
-/* ===== BODY ===== */
+/* 🌈 BACKGROUND */
 body {
   margin:0;
-  font-family: 'Segoe UI', sans-serif;
+  font-family:'Segoe UI',sans-serif;
   color:white;
-  background:
-    linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)),
-    url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
-  background-size:cover;
+  overflow:hidden;
+
+  background: linear-gradient(-45deg,#0f172a,#1e293b,#020617,#111827);
+  background-size:400% 400%;
+  animation: bgMove 10s infinite alternate;
 }
 
-/* ===== NAVBAR ===== */
+@keyframes bgMove {
+  0% {background-position:0%}
+  100% {background-position:100%}
+}
+
+/* 🔝 NAV */
 .nav {
   display:flex;
   justify-content:space-between;
-  padding:15px 30px;
-  background:rgba(0,0,0,0.6);
-  backdrop-filter: blur(10px);
+  padding:15px 25px;
+  backdrop-filter:blur(15px);
+  background:rgba(255,255,255,0.05);
 }
 
-.title {
-  font-size:22px;
-  font-weight:bold;
-}
+.title { font-size:22px; font-weight:bold; }
 
-/* ===== STATS ===== */
+/* 📊 STATS */
 .stats {
   display:flex;
   gap:15px;
-  padding:20px;
+  padding:15px;
 }
 
 .box {
   flex:1;
   padding:20px;
   border-radius:15px;
-  background:rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
   text-align:center;
-  font-size:18px;
+  transition:0.3s;
 }
 
-/* ===== BUTTONS ===== */
+.box:hover {
+  transform:scale(1.05);
+}
+
+/* 🔘 BUTTONS */
 .actions {
-  padding:0 20px;
+  padding:10px 15px;
 }
 
 .actions button {
@@ -62,41 +69,67 @@ body {
   background:#00c6ff;
   color:white;
   cursor:pointer;
+  transition:0.3s;
 }
 
-/* ===== MAIN ===== */
+.actions button:hover {
+  transform:scale(1.1);
+}
+
+/* 📦 MAIN */
 .container {
   display:flex;
-  padding:20px;
+  height:calc(100vh - 140px);
 }
 
-/* ===== LIST ===== */
+/* 📋 LIST */
 .list {
   width:35%;
-  height:500px;
   overflow:auto;
+  padding:10px;
 }
 
-/* ===== MAP ===== */
+/* 🗺 MAP */
 #map {
   width:65%;
-  height:500px;
-  border-radius:15px;
+  height:100%;
+  border-radius:20px;
 }
 
-/* ===== CARD ===== */
+/* 🧾 CARD */
 .card {
-  background:rgba(255,255,255,0.1);
   margin:10px;
-  padding:10px;
-  border-radius:10px;
-  backdrop-filter: blur(10px);
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
+  transition:0.3s;
 }
 
-/* COLORS */
-.medical { border-left:5px solid #3b82f6; }
-.fire { border-left:5px solid #ef4444; }
-.crime { border-left:5px solid #facc15; }
+.card:hover {
+  transform:translateX(5px);
+}
+
+/* 🚨 SOS PULSE */
+.pulse {
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {box-shadow:0 0 0 0 red;}
+  100% {box-shadow:0 0 20px 10px transparent;}
+}
+
+/* 🔔 NOTIFICATION */
+.notify {
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:red;
+  padding:15px;
+  border-radius:10px;
+  display:none;
+}
 
 </style>
 </head>
@@ -104,14 +137,14 @@ body {
 <body>
 
 <div class="nav">
-  <div class="title">🚨 RapidRelief Admin PRO</div>
-  <div>Live Monitor</div>
+  <div class="title">🚨 RapidRelief Ultimate</div>
+  <div>🟢 Live Monitoring</div>
 </div>
 
 <div class="stats">
-  <div class="box">🚑 Medical: <span id="med">0</span></div>
-  <div class="box">🔥 Fire: <span id="fire">0</span></div>
-  <div class="box">🚓 Crime: <span id="crime">0</span></div>
+  <div class="box">🚑 <br> <span id="med">0</span></div>
+  <div class="box">🔥 <br> <span id="fire">0</span></div>
+  <div class="box">🚓 <br> <span id="crime">0</span></div>
 </div>
 
 <div class="actions">
@@ -125,29 +158,51 @@ body {
   <div id="map"></div>
 </div>
 
+<div class="notify" id="notify">🚨 NEW SOS ALERT!</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-let map = L.map('map').setView([10.8505,76.2711], 7);
+let map = L.map('map').setView([10.8505,76.2711],7);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
 .addTo(map);
 
 let markers=[];
+let lastCount=0;
 
-/* ===== LOAD SOS ===== */
+/* 🔔 ALERT SOUND */
+function playSound(){
+  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+}
+
+/* 🔔 SHOW NOTIFICATION */
+function showNotify(){
+  let n=document.getElementById("notify");
+  n.style.display="block";
+  setTimeout(()=>n.style.display="none",3000);
+}
+
+/* 🚨 SOS */
 function loadSOS(){
 
   fetch("/admin/sos")
   .then(res=>res.json())
   .then(data=>{
 
+    if(data.length > lastCount){
+      playSound();
+      showNotify();
+    }
+
+    lastCount = data.length;
+
     markers.forEach(m=>map.removeLayer(m));
     markers=[];
 
     let html="";
-    let med=0, fire=0, crime=0;
+    let med=0,fire=0,crime=0;
 
     data.slice().reverse().forEach(s=>{
 
@@ -155,29 +210,26 @@ function loadSOS(){
       if(s.type==="Fire") fire++;
       if(s.type==="Crime") crime++;
 
-      let cls = s.type.toLowerCase();
+      html+=`
+      <div class="card pulse">
+        🚨 ${s.type}<br>
+        📍 ${s.lat}, ${s.lon}<br>
+        🕒 ${s.time}
+      </div>`;
 
-      html += `
-        <div class="card ${cls}">
-          🚨 ${s.type}<br>
-          📍 ${s.lat}, ${s.lon}<br>
-          🕒 ${s.time}
-        </div>
-      `;
-
-      let marker = L.marker([s.lat, s.lon]).addTo(map);
-      markers.push(marker);
+      let m=L.marker([s.lat,s.lon]).addTo(map);
+      markers.push(m);
     });
 
-    document.getElementById("list").innerHTML = html;
-    document.getElementById("med").innerText = med;
-    document.getElementById("fire").innerText = fire;
-    document.getElementById("crime").innerText = crime;
+    document.getElementById("list").innerHTML=html;
+    document.getElementById("med").innerText=med;
+    document.getElementById("fire").innerText=fire;
+    document.getElementById("crime").innerText=crime;
 
   });
 }
 
-/* ===== TRACK ===== */
+/* 📍 TRACK */
 function loadTrack(){
 
   fetch("/admin/track")
@@ -187,30 +239,15 @@ function loadTrack(){
     markers.forEach(m=>map.removeLayer(m));
     markers=[];
 
-    let html="";
-
     data.slice(-20).forEach(t=>{
-
-      html += `
-        <div class="card">
-          📍 ${t.lat}, ${t.lon}<br>
-          🕒 ${t.time}
-        </div>
-      `;
-
-      let marker = L.marker([t.lat, t.lon]).addTo(map);
-      markers.push(marker);
+      let m=L.marker([t.lat,t.lon]).addTo(map);
+      markers.push(m);
     });
-
-    document.getElementById("list").innerHTML = html;
-
-    let last = data[data.length-1];
-    if(last) map.setView([last.lat,last.lon],15);
 
   });
 }
 
-/* ===== USERS ===== */
+/* 👤 USERS */
 function loadUsers(){
 
   fetch("/admin/users")
@@ -220,21 +257,19 @@ function loadUsers(){
     let html="";
 
     data.forEach(u=>{
-      html += `
-        <div class="card">
-          👤 ${u.username}<br>
-          🕒 ${u.time}
-        </div>
-      `;
+      html+=`
+      <div class="card">
+        👤 ${u.username}<br>
+        🕒 ${u.time}
+      </div>`;
     });
 
-    document.getElementById("list").innerHTML = html;
+    document.getElementById("list").innerHTML=html;
   });
 }
 
-/* AUTO REFRESH */
-setInterval(loadSOS, 4000);
-
+/* 🔄 AUTO */
+setInterval(loadSOS,3000);
 loadSOS();
 
 </script>
