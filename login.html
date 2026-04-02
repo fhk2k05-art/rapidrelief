@@ -1,57 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login</title>
+<title>RapidRelief Login</title>
 
 <style>
+
+/* 🌌 BACKGROUND */
 body{
-  font-family:Arial;
+  margin:0;
+  font-family:'Segoe UI',sans-serif;
+  height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
-  height:100vh;
-  background:#111;
+
+  background:
+  linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)),
+  url("https://images.unsplash.com/photo-1584433144859-1fc3ab64a957");
+
+  background-size:cover;
   color:white;
 }
 
-.box{
-  background:#222;
+/* 🧊 GLASS CARD */
+.container{
+  width:350px;
   padding:30px;
-  border-radius:10px;
+  border-radius:20px;
+
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
+
+  box-shadow:0 0 40px rgba(0,0,0,0.5);
   text-align:center;
 }
 
-input,button{
-  margin:10px;
-  padding:10px;
-  width:200px;
+/* 🏷 TITLE */
+h2{
+  margin-bottom:20px;
 }
+
+/* INPUTS */
+input{
+  width:90%;
+  padding:12px;
+  margin:10px 0;
+  border:none;
+  border-radius:10px;
+  outline:none;
+}
+
+/* BUTTONS */
+button{
+  width:95%;
+  padding:12px;
+  margin:8px 0;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:14px;
+  transition:0.3s;
+}
+
+/* PRIMARY */
+.primary{
+  background:#00c6ff;
+  color:white;
+}
+
+/* SECONDARY */
+.secondary{
+  background:#333;
+  color:white;
+}
+
+/* FACE BUTTON */
+.face{
+  background:green;
+  color:white;
+}
+
+/* HOVER EFFECT */
+button:hover{
+  transform:scale(1.05);
+}
+
+/* DIVIDER */
+hr{
+  margin:20px 0;
+  border:0;
+  height:1px;
+  background:rgba(255,255,255,0.2);
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="container">
 
-<h2>Login / Register</h2>
+<h2>🚑 RapidRelief</h2>
 
 <input id="username" placeholder="Username">
 <input id="password" type="password" placeholder="Password">
 
-<button onclick="login()">Login</button>
-<button onclick="register()">Register</button>
+<button class="primary" onclick="login()">Login</button>
+<button class="secondary" onclick="register()">Register</button>
 
 <hr>
 
-<button onclick="registerFace()">📸 Register Face</button>
-<button onclick="loginFace()">😎 Face Login</button>
+<button class="face" onclick="registerFace()">📸 Register Face</button>
+<button class="face" onclick="loginFace()">😎 Face Login</button>
 
 </div>
 
 <script>
 
+/* 📸 CAPTURE FACE */
 async function captureFace(){
-
   const stream = await navigator.mediaDevices.getUserMedia({video:true});
   const video = document.createElement("video");
 
@@ -69,9 +136,8 @@ async function captureFace(){
   return canvas.toDataURL();
 }
 
-/* LOGIN */
+/* 🔐 LOGIN */
 function login(){
-
   fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -84,9 +150,8 @@ function login(){
   .then(handleLogin);
 }
 
-/* REGISTER */
+/* 📝 REGISTER */
 function register(){
-
   fetch("/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -99,9 +164,8 @@ function register(){
   .then(data=>alert(data.status));
 }
 
-/* FACE REGISTER */
+/* 📸 FACE REGISTER */
 async function registerFace(){
-
   const face = await captureFace();
 
   fetch("/register",{
@@ -114,12 +178,11 @@ async function registerFace(){
     })
   })
   .then(res=>res.json())
-  .then(()=>alert("Face Registered"));
+  .then(()=>alert("Face Registered ✅"));
 }
 
-/* FACE LOGIN */
+/* 😎 FACE LOGIN */
 async function loginFace(){
-
   const face = await captureFace();
 
   fetch("/login",{
@@ -131,7 +194,7 @@ async function loginFace(){
   .then(handleLogin);
 }
 
-/* HANDLE LOGIN */
+/* 🔄 HANDLE LOGIN */
 function handleLogin(data){
 
   if(data.status==="admin"){
