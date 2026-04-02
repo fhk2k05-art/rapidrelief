@@ -1,59 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login - RapidRelief</title>
+<title>Login</title>
 
 <style>
-
-body {
-  margin:0;
-  font-family:'Segoe UI',sans-serif;
+body{
+  font-family:Arial;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
-
-  background:
-  linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
-  url("https://images.unsplash.com/photo-1584433144859-1fc3ab64a957");
-
-  background-size:cover;
+  background:#111;
   color:white;
 }
 
-.box {
-  background:rgba(255,255,255,0.1);
+.box{
+  background:#222;
   padding:30px;
-  border-radius:15px;
-  backdrop-filter:blur(10px);
-  width:300px;
+  border-radius:10px;
   text-align:center;
 }
 
-input {
-  width:90%;
+input,button{
   margin:10px;
   padding:10px;
-  border:none;
-  border-radius:8px;
+  width:200px;
 }
-
-button {
-  width:95%;
-  padding:10px;
-  margin:10px;
-  border:none;
-  border-radius:8px;
-  background:#00c6ff;
-  color:white;
-  cursor:pointer;
-}
-
-.toggle {
-  color:#00c6ff;
-  cursor:pointer;
-}
-
 </style>
 </head>
 
@@ -61,91 +33,116 @@ button {
 
 <div class="box">
 
-<h2 id="title">Login</h2>
+<h2>Login / Register</h2>
 
-<input type="text" id="username" placeholder="Username">
-<input type="password" id="password" placeholder="Password">
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
 
-<button onclick="submitForm()">Login</button>
+<button onclick="login()">Login</button>
+<button onclick="register()">Register</button>
 
-<p>
-  <span id="toggleText">Don't have an account?</span>
-  <span class="toggle" onclick="toggleMode()">Register</span>
-</p>
+<hr>
+
+<button onclick="registerFace()">📸 Register Face</button>
+<button onclick="loginFace()">😎 Face Login</button>
 
 </div>
 
 <script>
 
-let isLogin = true;
+async function captureFace(){
 
-/* 🔄 SWITCH LOGIN/REGISTER */
-function toggleMode(){
-  isLogin = !isLogin;
+  const stream = await navigator.mediaDevices.getUserMedia({video:true});
+  const video = document.createElement("video");
 
-  document.getElementById("title").innerText = isLogin ? "Login" : "Register";
-  document.querySelector("button").innerText = isLogin ? "Login" : "Register";
-  document.getElementById("toggleText").innerText =
-    isLogin ? "Don't have an account?" : "Already have an account?";
+  video.srcObject = stream;
+  await video.play();
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 200;
+  canvas.height = 150;
+
+  canvas.getContext("2d").drawImage(video,0,0);
+
+  stream.getTracks().forEach(t=>t.stop());
+
+  return canvas.toDataURL();
 }
 
-/* 🚀 SUBMIT */
-function submitForm(){
+/* LOGIN */
+function login(){
 
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  if(!username || !password){
-    alert("Enter all fields ⚠️");
-    return;
-  }
-
-  const url = isLogin ? "/login" : "/register";
-
-  fetch(url,{
+  fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username,password})
+    body:JSON.stringify({
+      username:username.value,
+      password:password.value
+    })
   })
   .then(res=>res.json())
-  .then(data=>{
+  .then(handleLogin);
+}
 
-    /* 🔐 LOGIN */
-    if(isLogin){
+/* REGISTER */
+function register(){
 
-      if(data.status === "admin"){
-        window.location.href = "/admin";
-      }
-      else if(data.status === "user"){
-        window.location.href = "/dashboard";
-      }
-      else{
-        alert("Login failed ❌");
-      }
-
-    }
-
-    /* 📝 REGISTER */
-    else{
-
-      if(data.status === "registered"){
-        alert("Registered successfully ✅");
-        toggleMode();
-      }
-      else if(data.status === "exists"){
-        alert("User already exists ⚠️");
-      }
-      else{
-        alert("Registration failed ❌");
-      }
-
-    }
-
+  fetch("/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username:username.value,
+      password:password.value
+    })
   })
-  .catch(()=>{
-    alert("Server error ❌");
-  });
+  .then(res=>res.json())
+  .then(data=>alert(data.status));
+}
 
+/* FACE REGISTER */
+async function registerFace(){
+
+  const face = await captureFace();
+
+  fetch("/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username:username.value,
+      password:password.value,
+      face
+    })
+  })
+  .then(res=>res.json())
+  .then(()=>alert("Face Registered"));
+}
+
+/* FACE LOGIN */
+async function loginFace(){
+
+  const face = await captureFace();
+
+  fetch("/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({face})
+  })
+  .then(res=>res.json())
+  .then(handleLogin);
+}
+
+/* HANDLE LOGIN */
+function handleLogin(data){
+
+  if(data.status==="admin"){
+    window.location="/admin";
+  }
+  else if(data.status==="user"){
+    window.location="/dashboard";
+  }
+  else{
+    alert("Login failed ❌");
+  }
 }
 
 </script>
