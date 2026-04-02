@@ -6,66 +6,36 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-
 body {
   margin:0;
-  font-family:'Segoe UI',sans-serif;
+  font-family:'Segoe UI';
   display:flex;
   background:#0f172a;
   color:white;
 }
 
-/* SIDEBAR */
 .sidebar {
   width:220px;
   background:#020617;
-  height:100vh;
   padding:20px;
 }
 
 .sidebar button {
-  display:block;
   width:100%;
   margin:10px 0;
   padding:10px;
   background:#1e293b;
-  border:none;
   color:white;
-  border-radius:8px;
-  cursor:pointer;
+  border:none;
 }
 
-/* MAIN */
 .main {
   flex:1;
   padding:20px;
 }
 
-/* HEADER */
-.header {
-  display:flex;
-  justify-content:space-between;
-}
-
-/* STATS */
-.stats {
-  display:flex;
-  gap:15px;
-  margin-top:20px;
-}
-
-.box {
-  flex:1;
-  padding:15px;
-  background:#1e293b;
-  border-radius:10px;
-  text-align:center;
-}
-
-/* CONTENT */
 .content {
   display:flex;
-  margin-top:20px;
 }
 
 .list {
@@ -79,50 +49,29 @@ body {
   height:500px;
 }
 
-/* CARD */
 .card {
-  padding:10px;
   margin:10px;
-  border-radius:10px;
+  padding:10px;
+  background:#1e293b;
 }
-
-/* COLORS */
-.medical { background:#2563eb; }
-.fire { background:#dc2626; }
-.crime { background:#eab308; color:black; }
-.mechanical { background:#f97316; }
-
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-  <h2>🚨 Admin</h2>
   <button onclick="loadSOS()">SOS</button>
-  <button onclick="loadTrack()">Tracking</button>
-  <button onclick="loadCategory()">Categories</button>
+  <button onclick="loadTrack()">Live Tracking</button>
   <button onclick="loadUsers()">Users</button>
 </div>
 
 <div class="main">
+  <h2>Admin Dashboard</h2>
 
-<div class="header">
-  <h2>Dashboard</h2>
-  <span>Total SOS: <b id="count">0</b></span>
-</div>
-
-<div class="stats">
-  <div class="box">🚑 Medical: <span id="med">0</span></div>
-  <div class="box">🔥 Fire: <span id="fire">0</span></div>
-  <div class="box">🚓 Crime: <span id="crime">0</span></div>
-</div>
-
-<div class="content">
-  <div class="list" id="list"></div>
-  <div id="map"></div>
-</div>
-
+  <div class="content">
+    <div class="list" id="list"></div>
+    <div id="map"></div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -139,42 +88,38 @@ function loadSOS(){
   fetch("/admin/sos")
   .then(res=>res.json())
   .then(data=>{
+    let html="";
+    data.slice().reverse().forEach(s=>{
+      html+=`<div class="card">🚨 ${s.type}<br>${s.lat},${s.lon}</div>`;
+    });
+    document.getElementById("list").innerHTML=html;
+  });
+}
 
-    document.getElementById("count").innerText = data.length;
+/* TRACK */
+function loadTrack(){
 
-    let med=0, fire=0, crime=0;
+  fetch("/admin/track")
+  .then(res=>res.json())
+  .then(data=>{
 
     markers.forEach(m=>map.removeLayer(m));
     markers=[];
 
     let html="";
 
-    data.slice().reverse().forEach(s=>{
+    data.slice(-20).forEach(t=>{
 
-      if(s.type==="Medical") med++;
-      if(s.type==="Fire") fire++;
-      if(s.type==="Crime") crime++;
+      html+=`<div class="card">📍 ${t.lat},${t.lon}</div>`;
 
-      let cls = s.type.toLowerCase();
-
-      html += `
-        <div class="card ${cls}">
-          ${s.type}<br>
-          ${s.lat}, ${s.lon}<br>
-          ${s.time}
-        </div>
-      `;
-
-      let marker = L.marker([s.lat, s.lon]).addTo(map);
+      let marker=L.marker([t.lat,t.lon]).addTo(map);
       markers.push(marker);
     });
 
-    document.getElementById("list").innerHTML = html;
+    document.getElementById("list").innerHTML=html;
 
-    document.getElementById("med").innerText = med;
-    document.getElementById("fire").innerText = fire;
-    document.getElementById("crime").innerText = crime;
-
+    let last=data[data.length-1];
+    if(last) map.setView([last.lat,last.lon],15);
   });
 }
 
@@ -183,46 +128,16 @@ function loadUsers(){
   fetch("/admin/users")
   .then(res=>res.json())
   .then(data=>{
-
     let html="";
-
     data.forEach(u=>{
-      html += `
-        <div class="card">
-          👤 ${u.username}<br>
-          🔐 ${u.password}<br>
-          🕒 ${u.time}
-        </div>
-      `;
+      html+=`<div class="card">👤 ${u.username}</div>`;
     });
-
-    document.getElementById("list").innerHTML = html;
+    document.getElementById("list").innerHTML=html;
   });
 }
 
-/* TRACK */
-function loadTrack(){
-  fetch("/admin/track")
-  .then(res=>res.json())
-  .then(data=>{
-    document.getElementById("list").innerText =
-      JSON.stringify(data,null,2);
-  });
-}
-
-/* CATEGORY */
-function loadCategory(){
-  fetch("/admin/category")
-  .then(res=>res.json())
-  .then(data=>{
-    document.getElementById("list").innerText =
-      JSON.stringify(data,null,2);
-  });
-}
-
-/* AUTO LOAD */
-setInterval(loadSOS,3000);
-loadSOS();
+/* AUTO TRACK */
+setInterval(loadTrack,5000);
 
 </script>
 
