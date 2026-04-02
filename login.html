@@ -21,18 +21,32 @@ body{
   color:white;
 }
 
+/* MAIN CARD */
 .container{
-  width:350px;
+  width:360px;
   padding:30px;
   border-radius:20px;
+  text-align:center;
 
   background:rgba(255,255,255,0.08);
   backdrop-filter:blur(15px);
-
-  box-shadow:0 0 40px rgba(0,0,0,0.5);
-  text-align:center;
+  box-shadow:0 0 40px rgba(0,0,0,0.6);
 }
 
+/* LOGO */
+.logoBox{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.logoBox img{
+  width:45px;
+}
+
+/* INPUT */
 input{
   width:90%;
   padding:12px;
@@ -41,10 +55,11 @@ input{
   border-radius:10px;
 }
 
+/* BUTTON */
 button{
   width:95%;
   padding:12px;
-  margin:8px 0;
+  margin:6px 0;
   border:none;
   border-radius:10px;
   cursor:pointer;
@@ -55,13 +70,25 @@ button{
 .secondary{ background:#333; }
 .face{ background:green; }
 
-button:hover{ transform:scale(1.05); }
+button:hover{
+  transform:scale(1.05);
+}
 
 hr{
   margin:20px 0;
   border:0;
   height:1px;
   background:rgba(255,255,255,0.2);
+}
+
+/* FACE BOX */
+#faceBox{
+  display:none;
+  margin-top:20px;
+}
+
+video{
+  border-radius:15px;
 }
 
 </style>
@@ -71,9 +98,8 @@ hr{
 
 <div class="container">
 
-<!-- 🔥 LOGO -->
-<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px;">
-  <img src="logo.png" style="width:45px;height:45px;">
+<div class="logoBox">
+  <img src="logo.png">
   <h2>RapidRelief</h2>
 </div>
 
@@ -88,45 +114,101 @@ hr{
 <button class="face" onclick="registerFace()">📸 Register Face</button>
 <button class="face" onclick="loginFace()">😎 Face Login</button>
 
+<!-- 🔥 FACE UI -->
+<div id="faceBox">
+
+  <div style="position:relative;width:260px;margin:auto;">
+
+    <video id="video" width="260" height="200" autoplay></video>
+
+    <div style="
+      position:absolute;
+      top:10px;
+      left:30px;
+      width:200px;
+      height:180px;
+      border:3px dashed #00c6ff;
+      border-radius:50%;
+    "></div>
+
+    <p id="scanText" style="
+      position:absolute;
+      bottom:5px;
+      width:100%;
+      text-align:center;
+      font-size:12px;
+      color:#00c6ff;
+    ">
+      Align your face...
+    </p>
+
+  </div>
+
+</div>
+
 </div>
 
 <script>
 
-/* 📸 CAPTURE FACE */
-async function captureFace(){
+let stream;
 
-  const stream = await navigator.mediaDevices.getUserMedia({video:true});
-  const video = document.createElement("video");
+/* CAMERA */
+async function startCamera(){
 
+  const video = document.getElementById("video");
+
+  document.getElementById("faceBox").style.display="block";
+
+  stream = await navigator.mediaDevices.getUserMedia({video:true});
   video.srcObject = stream;
+
   await video.play();
 
-  const canvas = document.createElement("canvas");
-  canvas.width = 200;
-  canvas.height = 150;
+  document.getElementById("scanText").innerText="Align your face...";
+}
 
-  canvas.getContext("2d").drawImage(video,0,0);
+/* CAPTURE */
+function capture(){
+
+  const video = document.getElementById("video");
+
+  const canvas = document.createElement("canvas");
+  canvas.width=200;
+  canvas.height=150;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video,0,0,200,150);
 
   stream.getTracks().forEach(t=>t.stop());
+
+  document.getElementById("faceBox").style.display="none";
 
   return canvas.toDataURL();
 }
 
-/* 🔐 LOGIN */
-function login(){
-  fetch("/login",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      username:username.value,
-      password:password.value
-    })
-  })
-  .then(res=>res.json())
-  .then(handleLogin);
+/* AUTO CAPTURE */
+function autoCapture(callback){
+
+  let count=3;
+
+  const interval=setInterval(()=>{
+
+    document.getElementById("scanText").innerText =
+      "Capturing in " + count + "...";
+
+    count--;
+
+    if(count < 0){
+      clearInterval(interval);
+
+      const face = capture();
+      callback(face);
+    }
+
+  },1000);
 }
 
-/* 📝 REGISTER */
+/* REGISTER */
 function register(){
   fetch("/register",{
     method:"POST",
@@ -140,52 +222,70 @@ function register(){
   .then(data=>alert(data.status));
 }
 
-/* 📸 FACE REGISTER */
-async function registerFace(){
-
-  if(!username.value || !password.value){
-    alert("Enter username & password first ⚠️");
-    return;
-  }
-
-  const face = await captureFace();
-
-  fetch("/register",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      username:username.value,
-      password:password.value,
-      face
-    })
-  })
-  .then(res=>res.json())
-  .then(()=>alert("Face Registered ✅"));
-}
-
-/* 😎 FACE LOGIN */
-async function loginFace(){
-
-  if(!username.value){
-    alert("Enter username for face login ⚠️");
-    return;
-  }
-
-  const face = await captureFace();
-
+/* LOGIN */
+function login(){
   fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       username:username.value,
-      face
+      password:password.value
     })
   })
   .then(res=>res.json())
   .then(handleLogin);
 }
 
-/* 🔄 HANDLE LOGIN */
+/* FACE REGISTER */
+async function registerFace(){
+
+  if(!username.value || !password.value){
+    alert("Enter username & password ⚠️");
+    return;
+  }
+
+  await startCamera();
+
+  autoCapture((face)=>{
+    fetch("/register",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        username:username.value,
+        password:password.value,
+        face
+      })
+    })
+    .then(res=>res.json())
+    .then(()=>alert("Face Registered ✅"));
+  });
+}
+
+/* FACE LOGIN */
+async function loginFace(){
+
+  if(!username.value){
+    alert("Enter username ⚠️");
+    return;
+  }
+
+  await startCamera();
+
+  autoCapture((face)=>{
+    fetch("/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        username:username.value,
+        face
+      })
+    })
+    .then(res=>res.json())
+    .then(handleLogin);
+  });
+}
+
+/* HANDLE LOGIN */
 function handleLogin(data){
 
   if(data.status==="admin"){
