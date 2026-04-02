@@ -1,22 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Admin PRO</title>
+<title>Admin Dashboard</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI';
-  display:flex;
-  background:#0f172a;
-  color:white;
-}
+body { font-family: Arial; background:#111; color:white; display:flex; }
 
 .sidebar {
-  width:220px;
-  background:#020617;
+  width:200px;
+  background:#000;
   padding:20px;
 }
 
@@ -24,9 +18,6 @@ body {
   width:100%;
   margin:10px 0;
   padding:10px;
-  background:#1e293b;
-  color:white;
-  border:none;
 }
 
 .main {
@@ -34,25 +25,14 @@ body {
   padding:20px;
 }
 
-.content {
-  display:flex;
-}
-
-.list {
-  width:40%;
-  height:500px;
-  overflow:auto;
-}
-
 #map {
-  width:60%;
-  height:500px;
+  height:400px;
 }
 
 .card {
+  background:#222;
   margin:10px;
   padding:10px;
-  background:#1e293b;
 }
 </style>
 </head>
@@ -61,24 +41,22 @@ body {
 
 <div class="sidebar">
   <button onclick="loadSOS()">SOS</button>
-  <button onclick="loadTrack()">Live Tracking</button>
+  <button onclick="loadTrack()">Tracking</button>
   <button onclick="loadUsers()">Users</button>
 </div>
 
 <div class="main">
-  <h2>Admin Dashboard</h2>
+  <h2>Admin Panel</h2>
 
-  <div class="content">
-    <div class="list" id="list"></div>
-    <div id="map"></div>
-  </div>
+  <div id="list"></div>
+  <div id="map"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-let map = L.map('map').setView([10.8505,76.2711], 7);
+let map = L.map('map').setView([10.85,76.27], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let markers=[];
@@ -89,16 +67,15 @@ function loadSOS(){
   .then(res=>res.json())
   .then(data=>{
     let html="";
-    data.slice().reverse().forEach(s=>{
-      html+=`<div class="card">🚨 ${s.type}<br>${s.lat},${s.lon}</div>`;
+    data.forEach(s=>{
+      html += `<div class="card">🚨 ${s.type}<br>${s.lat},${s.lon}</div>`;
     });
-    document.getElementById("list").innerHTML=html;
+    document.getElementById("list").innerHTML = html;
   });
 }
 
 /* TRACK */
 function loadTrack(){
-
   fetch("/admin/track")
   .then(res=>res.json())
   .then(data=>{
@@ -108,18 +85,20 @@ function loadTrack(){
 
     let html="";
 
-    data.slice(-20).forEach(t=>{
+    data.forEach(t=>{
+      html += `<div class="card">📍 ${t.lat},${t.lon}</div>`;
 
-      html+=`<div class="card">📍 ${t.lat},${t.lon}</div>`;
-
-      let marker=L.marker([t.lat,t.lon]).addTo(map);
-      markers.push(marker);
+      let m = L.marker([t.lat,t.lon]).addTo(map);
+      markers.push(m);
     });
 
-    document.getElementById("list").innerHTML=html;
+    document.getElementById("list").innerHTML = html;
 
-    let last=data[data.length-1];
-    if(last) map.setView([last.lat,last.lon],15);
+    if(data.length){
+      let last = data[data.length-1];
+      map.setView([last.lat,last.lon],15);
+    }
+
   });
 }
 
@@ -130,9 +109,9 @@ function loadUsers(){
   .then(data=>{
     let html="";
     data.forEach(u=>{
-      html+=`<div class="card">👤 ${u.username}</div>`;
+      html += `<div class="card">👤 ${u.username}</div>`;
     });
-    document.getElementById("list").innerHTML=html;
+    document.getElementById("list").innerHTML = html;
   });
 }
 
