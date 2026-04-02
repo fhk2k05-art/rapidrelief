@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const session = require("express-session");
-const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,45 +21,24 @@ app.use(session({
 app.use(express.static(__dirname));
 
 /* =========================
-   MONGODB CONNECTION
-========================= */
-mongoose.connect("mongodb+srv://fadil:1234@cluster0.8jfo8j3.mongodb.net/rapid")
-.then(()=>console.log("✅ MongoDB Connected"))
-.catch(err=>console.log("❌ DB ERROR:", err));
-
-/* =========================
-   MODELS
+   FILE SETUP
 ========================= */
 
-const User = mongoose.model("User", {
-  username: String,
-  password: String,
-  face: String,
-  time: String
-});
+function ensureFile(file){
+  if(!fs.existsSync(file)){
+    fs.writeFileSync(file, "[]");
+  }
+}
 
-const SOS = mongoose.model("SOS", {
-  user: String,
-  lat: Number,
-  lon: Number,
-  type: String,
-  time: String
-});
+["users.json","sos.json","track.json","category.json"].forEach(ensureFile);
 
-const Track = mongoose.model("Track", {
-  user: String,
-  lat: Number,
-  lon: Number,
-  time: String
-});
+function load(file){
+  return JSON.parse(fs.readFileSync(file));
+}
 
-const Category = mongoose.model("Category", {
-  user: String,
-  type: String,
-  lat: Number,
-  lon: Number,
-  time: String
-});
+function save(file,data){
+  fs.writeFileSync(file, JSON.stringify(data,null,2));
+}
 
 /* =========================
    ROUTES
@@ -75,7 +54,7 @@ app.get("/dashboard",(req,res)=>{
 });
 
 app.get("/admin",(req,res)=>{
-  if(req.session.user === "admin"){
+  if(req.session.user==="admin"){
     res.sendFile(path.join(__dirname,"admin.html"));
   } else {
     res.send("❌ Access Denied");
@@ -87,69 +66,66 @@ app.get("/admin",(req,res)=>{
 ========================= */
 
 /* REGISTER */
-app.post("/register", async (req,res)=>{
-  try{
-    const { username, password, face } = req.body;
+app.post("/register",(req,res)=>{
 
-    const exists = await User.findOne({ username });
-    if(exists) return res.json({status:"exists"});
+  let users = load("users.json");
 
-    const user = new User({
-      username,
-      password,
-      face: face || null,
-      time:new Date().toLocaleString()
-    });
+  const { username, password, face } = req.body;
 
-    await user.save();
+  const exists = users.find(u => u.username === username);
+  if(exists) return res.json({status:"exists"});
 
-    console.log("✅ User Registered:", username);
+  const user = {
+    username,
+    password,
+    face: face || null,
+    time:new Date().toLocaleString()
+  };
 
-    res.json({status:"registered"});
-  }catch(err){
-    console.log(err);
-    res.json({status:"error"});
-  }
+  users.push(user);
+  save("users.json",users);
+
+  console.log("✅ Registered:", username);
+
+  res.json({status:"registered"});
 });
 
 /* LOGIN */
-app.post("/login", async (req,res)=>{
-  try{
-    const { username, password, face } = req.body;
+app.post("/login",(req,res)=>{
 
-    let user = null;
+  let users = load("users.json");
 
-    // normal login
-    if(username && password){
-      user = await User.findOne({ username, password });
-    }
+  const { username, password, face } = req.body;
 
-    // face login
-    if(!user && username && face){
-      user = await User.findOne({
-        username,
-        face: { $ne: null }
-      });
-    }
+  let user = null;
 
-    if(user){
-      req.session.user = user.username;
-
-      console.log("✅ Login:", user.username);
-
-      if(user.username === "admin"){
-        return res.json({status:"admin"});
-      } else {
-        return res.json({status:"user"});
-      }
-    }
-
-    res.json({status:"fail"});
-
-  }catch(err){
-    console.log(err);
-    res.json({status:"error"});
+  // normal login
+  if(username && password){
+    user = users.find(u =>
+      u.username === username && u.password === password
+    );
   }
+
+  // face login
+  if(!user && username && face){
+    user = users.find(u =>
+      u.username === username && u.face
+    );
+  }
+
+  if(user){
+    req.session.user = user.username;
+
+    console.log("✅ Login:", user.username);
+
+    if(user.username==="admin"){
+      return res.json({status:"admin"});
+    } else {
+      return res.json({status:"user"});
+    }
+  }
+
+  res.json({status:"fail"});
 });
 
 /* LOGOUT */
@@ -160,30 +136,39 @@ app.get("/logout",(req,res)=>{
 /* =========================
    CATEGORY
 ========================= */
-app.post("/category", async (req,res)=>{
-  const data = new Category({
+app.post("/category",(req,res)=>{
+
+  let dataArr = load("category.json");
+
+  const data = {
     ...req.body,
     user:req.session.user || "guest",
     time:new Date().toLocaleString()
-  });
+  };
 
-  await data.save();
+  dataArr.push(data);
+  save("category.json",dataArr);
+
   res.json({ok:true});
 });
 
 /* =========================
    SOS
 ========================= */
-app.post("/sos", async (req,res)=>{
-  const data = new SOS({
+app.post("/sos",(req,res)=>{
+
+  let dataArr = load("sos.json");
+
+  const data = {
     ...req.body,
     user:req.session.user || "guest",
     time:new Date().toLocaleString()
-  });
+  };
 
-  await data.save();
+  dataArr.push(data);
+  save("sos.json",dataArr);
 
-  console.log("🚨 SOS Saved");
+  console.log("🚨 SOS Sent");
 
   res.json({ok:true});
 });
@@ -191,14 +176,18 @@ app.post("/sos", async (req,res)=>{
 /* =========================
    TRACK
 ========================= */
-app.post("/track", async (req,res)=>{
-  const data = new Track({
+app.post("/track",(req,res)=>{
+
+  let dataArr = load("track.json");
+
+  const data = {
     ...req.body,
     user:req.session.user || "guest",
     time:new Date().toLocaleString()
-  });
+  };
 
-  await data.save();
+  dataArr.push(data);
+  save("track.json",dataArr);
 
   res.json({ok:true});
 });
@@ -207,7 +196,7 @@ app.post("/track", async (req,res)=>{
    ADMIN SECURITY
 ========================= */
 function isAdmin(req,res,next){
-  if(req.session.user === "admin"){
+  if(req.session.user==="admin"){
     next();
   } else {
     res.status(403).send("❌ Unauthorized");
@@ -215,24 +204,20 @@ function isAdmin(req,res,next){
 }
 
 /* ADMIN APIs */
-app.get("/admin/users", isAdmin, async (req,res)=>{
-  const data = await User.find();
-  res.json(data);
+app.get("/admin/users", isAdmin, (req,res)=>{
+  res.json(load("users.json"));
 });
 
-app.get("/admin/sos", isAdmin, async (req,res)=>{
-  const data = await SOS.find();
-  res.json(data);
+app.get("/admin/sos", isAdmin, (req,res)=>{
+  res.json(load("sos.json"));
 });
 
-app.get("/admin/track", isAdmin, async (req,res)=>{
-  const data = await Track.find();
-  res.json(data);
+app.get("/admin/track", isAdmin, (req,res)=>{
+  res.json(load("track.json"));
 });
 
-app.get("/admin/category", isAdmin, async (req,res)=>{
-  const data = await Category.find();
-  res.json(data);
+app.get("/admin/category", isAdmin, (req,res)=>{
+  res.json(load("category.json"));
 });
 
 /* =========================
