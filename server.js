@@ -17,28 +17,21 @@ app.use(session({
 
 app.use(express.static(__dirname));
 
-/* DATA STORAGE */
+/* DATA */
 let users = [];
 let sosData = [];
-let categoryLogs = [];
 let trackingData = [];
+let categoryLogs = [];
 
-/* =========================
-   AUTH
-========================= */
-
+/* AUTH */
 app.post("/register", (req, res) => {
   const { username, password } = req.body;
 
-  const user = {
+  users.push({
     username,
     password,
     time: new Date().toLocaleString()
-  };
-
-  users.push(user);
-
-  console.log("👤 Registered:", user);
+  });
 
   res.json({ status: "registered" });
 });
@@ -60,10 +53,7 @@ app.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect("/"));
 });
 
-/* =========================
-   ROUTES
-========================= */
-
+/* ROUTES */
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
 });
@@ -72,34 +62,16 @@ app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "rr.html"));
 });
 
-/* =========================
-   CATEGORY
-========================= */
+/* CATEGORY */
 app.post("/category", (req, res) => {
-
-  const data = {
-    ...req.body,
-    time: new Date().toLocaleString()
-  };
-
-  categoryLogs.push(data);
-
-  console.log("📌 Category:", data);
-
+  categoryLogs.push({ ...req.body, time: new Date().toLocaleString() });
   res.json({ ok: true });
 });
 
-/* =========================
-   SOS
-========================= */
+/* SOS */
 app.post("/sos", (req, res) => {
-
-  const { lat, lon, type } = req.body;
-
   const data = {
-    lat,
-    lon,
-    type,
+    ...req.body,
     time: new Date().toLocaleString()
   };
 
@@ -110,45 +82,19 @@ app.post("/sos", (req, res) => {
   res.json({ status: "saved" });
 });
 
-/* =========================
-   TRACKING
-========================= */
+/* TRACK */
 app.post("/track", (req, res) => {
-
-  const data = {
-    ...req.body,
-    time: new Date().toLocaleString()
-  };
-
-  trackingData.push(data);
-
+  trackingData.push(req.body);
   res.json({ ok: true });
 });
 
-/* =========================
-   ADMIN APIs
-========================= */
+/* ADMIN APIs */
+app.get("/admin/sos", (req, res) => res.json(sosData));
+app.get("/admin/track", (req, res) => res.json(trackingData));
+app.get("/admin/category", (req, res) => res.json(categoryLogs));
+app.get("/admin/users", (req, res) => res.json(users));
 
-app.get("/admin/sos", (req, res) => {
-  res.json(sosData);
-});
-
-app.get("/admin/category", (req, res) => {
-  res.json(categoryLogs);
-});
-
-app.get("/admin/track", (req, res) => {
-  res.json(trackingData);
-});
-
-app.get("/admin/users", (req, res) => {
-  res.json(users);
-});
-
-/* =========================
-   START
-========================= */
-
+/* START */
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🚀 Server running on port " + PORT);
 });
