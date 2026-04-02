@@ -10,146 +10,67 @@
 body {
   margin:0;
   font-family:'Segoe UI',sans-serif;
+  color:white;
 
   background:
-    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-    url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
+  linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+  url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
 
   background-size:cover;
   background-position:center;
-  background-attachment:fixed;
-
-  color:white;
-
-  transition: background 0.8s ease-in-out, opacity 0.4s ease;
 }
 
-/* NAVBAR */
+/* NAV */
 nav {
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  padding:15px 25px;
+  padding:15px;
   background:rgba(0,0,0,0.6);
-  backdrop-filter:blur(10px);
 }
 
-.logo-box {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight:bold;
-}
-
-.logo-box img {
-  width:40px;
-  border-radius:10px;
-}
-
-.nav-right {
-  display:flex;
-  align-items:center;
-  gap:15px;
-}
-
-.profile img {
-  width:30px;
-  border-radius:50%;
-}
-
-.logout {
-  background:red;
-  color:white;
-  border:none;
-  padding:6px 12px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.main {
-  padding:20px;
-}
-
+/* GRID */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:15px;
+  gap:10px;
+  padding:20px;
 }
 
 .card {
-  background:rgba(255,255,255,0.1);
-  backdrop-filter:blur(10px);
+  background:#222;
   padding:20px;
-  border-radius:15px;
   text-align:center;
   cursor:pointer;
+  border-radius:10px;
 }
 
 .card.active {
   background:#00c6ff;
 }
 
-/* SOS */
+/* BUTTONS */
 .sos {
-  margin-top:20px;
-  padding:12px 25px;
-  font-size:16px;
+  margin:20px;
+  padding:15px;
+  width:90%;
   background:red;
   border:none;
-  border-radius:25px;
-  cursor:pointer;
-  display:block;
-  margin-left:auto;
-  margin-right:auto;
-  animation:pulse 1.5s infinite;
+  border-radius:20px;
+  font-size:18px;
 }
 
-@keyframes pulse {
-  0% {transform:scale(1);}
-  50% {transform:scale(1.05);}
-}
-
-#map {
-  height:300px;
-  margin-top:20px;
-  border-radius:15px;
-}
-
-.nearby {
-  margin-top:20px;
-}
-
-.nearby button {
-  margin:5px;
+.track {
+  margin:10px;
   padding:10px;
+  background:#00c6ff;
   border:none;
   border-radius:10px;
-  background:#00c6ff;
 }
 
-/* MOOD */
-.mood {
-  margin-top:20px;
-  background:rgba(255,255,255,0.1);
-  padding:15px;
-  border-radius:12px;
-}
-
-.mood button {
-  margin:5px;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#00c6ff;
-  cursor:pointer;
-}
-
-.chat {
-  position:fixed;
-  bottom:10px;
-  right:10px;
-  background:rgba(0,0,0,0.7);
-  padding:10px;
+/* MAP */
+#map {
+  height:300px;
+  margin:20px;
   border-radius:10px;
 }
 
@@ -159,24 +80,11 @@ nav {
 <body>
 
 <nav>
-  <div class="logo-box">
-    <img src="logo.png">
-    RapidRelief
-  </div>
-
-  <div class="nav-right">
-    <span>🔔</span>
-    <span>⚙️</span>
-    <div class="profile">
-      <img src="https://i.pravatar.cc/100">
-    </div>
-    <button class="logout" onclick="logout()">Logout</button>
-  </div>
+  <h2>🚑 RapidRelief</h2>
+  <button onclick="logout()">Logout</button>
 </nav>
 
-<div class="main">
-
-<h3>Emergency Dashboard</h3>
+<h3 style="padding-left:20px;">Select Emergency</h3>
 
 <div class="grid">
   <div class="card" onclick="selectType(this,'Medical')">🚑 Medical</div>
@@ -185,106 +93,86 @@ nav {
   <div class="card" onclick="selectType(this,'Mechanical')">🛠 Mechanical</div>
 </div>
 
-<button class="sos" onclick="sendSOS()">🚨 SOS</button>
+<button class="sos" onclick="sendSOS()">🚨 SEND SOS</button>
+
+<button class="track" onclick="startTracking()">📍 Start Tracking</button>
 
 <div id="map"></div>
-
-<div class="nearby">
-  <h3>📍 Nearby Services</h3>
-  <button onclick="findPlace('hospital')">Hospital</button>
-  <button onclick="findPlace('police')">Police</button>
-  <button onclick="findPlace('fire_station')">Fire</button>
-  <p id="result"></p>
-</div>
-
-<div class="mood">
-  <h3>🧠 Mood / Stress Help</h3>
-  <button onclick="showMood('stress')">😟 Stressed</button>
-  <button onclick="showMood('panic')">😨 Panic</button>
-  <p id="moodResult"></p>
-</div>
-
-</div>
-
-<div class="chat">
-  <input id="msg" placeholder="Ask AI...">
-  <button onclick="chat()">Send</button>
-</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-let map, markers=[];
-let userLat,userLon;
-let selectedType="Medical";
+let selectedType = "Medical";
+let map;
 
-/* LOGOUT */
-function logout(){
-  window.location.href="/logout";
-}
-
-/* MAP */
+/* MAP INIT */
 navigator.geolocation.getCurrentPosition(pos=>{
-  userLat=pos.coords.latitude;
-  userLon=pos.coords.longitude;
 
-  map=L.map('map').setView([userLat,userLon],14);
+  map = L.map('map').setView([pos.coords.latitude,pos.coords.longitude],14);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+    .addTo(map);
 
-  L.marker([userLat,userLon]).addTo(map).bindPopup("You are here").openPopup();
+  L.marker([pos.coords.latitude,pos.coords.longitude])
+    .addTo(map)
+    .bindPopup("You are here")
+    .openPopup();
+
 });
 
-/* 🔥 CATEGORY + BACKGROUND SWITCH */
+/* CATEGORY */
 function selectType(el,type){
+
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
-  selectedType=type;
 
-  let bg="";
+  selectedType = type;
 
-  if(type==="Medical"){
-    bg="https://images.unsplash.com/photo-1586773860418-d37222d8fce3";
-  }
+  let bg={
+    Medical:"https://images.unsplash.com/photo-1586773860418-d37222d8fce3",
+    Fire:"https://images.unsplash.com/photo-1603398938378-e54eab446dde",
+    Crime:"https://images.unsplash.com/photo-1504215680853-026ed2a45def",
+    Mechanical:"https://images.unsplash.com/photo-1515923256482-1c04580b477c"
+  }[type];
 
-  if(type==="Fire"){
-    bg="https://images.unsplash.com/photo-1603398938378-e54eab446dde";
-  }
+  document.body.style.background =
+    `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${bg}')`;
 
-  if(type==="Crime"){
-    bg="https://images.unsplash.com/photo-1504215680853-026ed2a45def";
-  }
+  /* SEND CATEGORY DATA */
+  navigator.geolocation.getCurrentPosition(async pos=>{
 
-  if(type==="Mechanical"){
-    bg="https://images.unsplash.com/photo-1515923256482-1c04580b477c";
-  }
+    let ip="unknown";
 
-  document.body.style.opacity = 0.85;
+    try{
+      let res=await fetch("https://api.ipify.org?format=json");
+      let data=await res.json();
+      ip=data.ip;
+    }catch{}
 
-  setTimeout(()=>{
-    document.body.style.background =
-      `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${bg}')`;
+    fetch("/category",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        type,
+        lat:pos.coords.latitude,
+        lon:pos.coords.longitude,
+        ip,
+        time:new Date().toLocaleString()
+      })
+    });
 
-    document.body.style.backgroundSize="cover";
-    document.body.style.backgroundPosition="center";
-    document.body.style.backgroundAttachment="fixed";
+  });
 
-    document.body.style.opacity = 1;
-  },200);
 }
-
-/* DEFAULT LOAD */
-window.onload = () => {
-  const firstCard = document.querySelector(".card");
-  selectType(firstCard, "Medical");
-};
 
 /* SOS */
 function sendSOS(){
+
   new Audio("https://www.soundjay.com/button/beep-07.wav").play();
 
   navigator.geolocation.getCurrentPosition(pos=>{
+
     fetch("/sos",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -293,106 +181,40 @@ function sendSOS(){
         lon:pos.coords.longitude,
         type:selectedType
       })
-    }).then(()=>alert("🚨 SOS SENT"));
+    });
+
+    alert("🚨 SOS SENT");
   });
+
 }
 
-/* NEARBY */
-function findPlace(type){
+/* TRACK */
+function startTracking(){
 
-  document.getElementById("result").innerText="Searching...";
+  setInterval(()=>{
 
-  navigator.geolocation.getCurrentPosition(pos=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
 
-    const lat=pos.coords.latitude;
-    const lon=pos.coords.longitude;
-
-    let category;
-
-    if(type==="hospital") category="healthcare.hospital";
-    if(type==="police") category="service.police";
-    if(type==="fire_station") category="service.fire_station";
-
-    const url=`https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=10&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`;
-
-    fetch(url)
-    .then(res=>res.json())
-    .then(data=>{
-
-      if(!data.features || data.features.length===0){
-        document.getElementById("result").innerText="No nearby found ❌";
-        return;
-      }
-
-      markers.forEach(m=>map.removeLayer(m));
-      markers=[];
-
-      let nearest = data.features[0];
-      let minDist = distance(lat, lon, nearest.geometry.coordinates[1], nearest.geometry.coordinates[0]);
-
-      data.features.forEach(f=>{
-        const coords=f.geometry.coordinates;
-        const name=f.properties.name||"Unknown";
-
-        const d = distance(lat, lon, coords[1], coords[0]);
-
-        if(d < minDist){
-          minDist = d;
-          nearest = f;
-        }
-
-        const marker=L.marker([coords[1],coords[0]]).addTo(map).bindPopup(name);
-        markers.push(marker);
+      fetch("/track",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          lat:pos.coords.latitude,
+          lon:pos.coords.longitude,
+          time:new Date().toLocaleString()
+        })
       });
 
-      const name = nearest.properties.name || "Unknown";
-
-      document.getElementById("result").innerText =
-        `Nearest ${type.replace("_"," ")}: ${name} (${minDist.toFixed(2)} km)`;
-
     });
-  });
+
+  },5000);
+
+  alert("📍 Tracking started");
 }
 
-/* DISTANCE */
-function distance(lat1, lon1, lat2, lon2){
-  const R=6371;
-  const dLat=(lat2-lat1)*Math.PI/180;
-  const dLon=(lon2-lon1)*Math.PI/180;
-
-  const a=Math.sin(dLat/2)**2 +
-    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-    Math.sin(dLon/2)**2;
-
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-/* MOOD */
-function showMood(type){
-  let text="";
-
-  if(type==="stress"){
-    text="🧘 Inhale 4s, hold 4s, exhale 6s. Repeat.\n💡 Relax and drink water.";
-  }
-
-  if(type==="panic"){
-    text="⚠️ You are safe.\nFocus on breathing.\nCall someone you trust.";
-  }
-
-  document.getElementById("moodResult").innerText=text;
-}
-
-/* CHAT */
-function chat(){
-  const msg=document.getElementById("msg").value;
-
-  fetch("/chat",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({message:msg})
-  })
-  .then(res=>res.json())
-  .then(data=>alert(data.reply));
+/* LOGOUT */
+function logout(){
+  window.location.href="/logout";
 }
 
 </script>
