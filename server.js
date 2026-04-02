@@ -10,16 +10,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
 /* =========================
-   📁 LOAD USERS FROM FILE
+   📁 LOAD DATA
 ========================= */
-let users = [];
-let sosData = [];
-let trackingData = [];
-let categoryLogs = [];
 
-if (fs.existsSync("users.json")) {
-  users = JSON.parse(fs.readFileSync("users.json"));
+function loadData(file){
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : [];
 }
+
+function saveData(file,data){
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+let users = loadData("users.json");
+let sosData = loadData("sos.json");
+let trackingData = loadData("track.json");
+let categoryLogs = loadData("category.json");
 
 /* =========================
    ROUTES
@@ -33,6 +38,10 @@ app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "rr.html"));
 });
 
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"));
+});
+
 /* =========================
    🔐 REGISTER
 ========================= */
@@ -43,7 +52,7 @@ app.post("/register", (req, res) => {
   const exists = users.find(u => u.username === username);
 
   if (exists) {
-    return res.json({ status: "user_exists" });
+    return res.json({ status: "exists" });
   }
 
   const user = {
@@ -53,9 +62,7 @@ app.post("/register", (req, res) => {
   };
 
   users.push(user);
-
-  // SAVE TO FILE
-  fs.writeFileSync("users.json", JSON.stringify(users, null, 2));
+  saveData("users.json", users);
 
   console.log("👤 Registered:", user);
 
@@ -98,8 +105,7 @@ app.post("/category", (req, res) => {
   };
 
   categoryLogs.push(data);
-
-  console.log("📌 Category:", data);
+  saveData("category.json", categoryLogs);
 
   res.json({ ok: true });
 });
@@ -115,6 +121,7 @@ app.post("/sos", (req, res) => {
   };
 
   sosData.push(data);
+  saveData("sos.json", sosData);
 
   console.log("🚨 SOS:", data);
 
@@ -132,8 +139,7 @@ app.post("/track", (req, res) => {
   };
 
   trackingData.push(data);
-
-  console.log("📍 Track:", data);
+  saveData("track.json", trackingData);
 
   res.json({ ok: true });
 });
@@ -159,7 +165,7 @@ app.get("/admin/category", (req, res) => {
 });
 
 /* =========================
-   🚀 START SERVER
+   🚀 START
 ========================= */
 
 app.listen(PORT, () => {
