@@ -21,20 +21,32 @@ app.use(session({
 app.use(express.static(__dirname));
 
 /* =========================
-   FILE STORAGE
+   FILE SYSTEM FIX (IMPORTANT)
 ========================= */
+
+// ensure file exists
+function ensureFile(file){
+  if(!fs.existsSync(file)){
+    fs.writeFileSync(file, "[]");
+  }
+}
+
+// initialize files
+["users.json","sos.json","track.json","category.json"].forEach(ensureFile);
+
+// load data
 function loadData(file){
-  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : [];
+  try{
+    return JSON.parse(fs.readFileSync(file));
+  }catch{
+    return [];
+  }
 }
 
+// save data
 function saveData(file,data){
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  fs.writeFileSync(file, JSON.stringify(data,null,2));
 }
-
-let users = loadData("users.json");
-let sosData = loadData("sos.json");
-let trackingData = loadData("track.json");
-let categoryLogs = loadData("category.json");
 
 /* =========================
    ROUTES
@@ -58,15 +70,15 @@ app.get("/admin",(req,res)=>{
 });
 
 /* =========================
-   AUTH SYSTEM
+   REGISTER (FIXED SAVE)
 ========================= */
-
-/* 🔐 REGISTER (FACE + PASSWORD) */
 app.post("/register",(req,res)=>{
+
+  let users = loadData("users.json");
 
   const { username, password, face } = req.body;
 
-  const exists = users.find(u=>u.username === username);
+  const exists = users.find(u => u.username === username);
   if(exists) return res.json({status:"exists"});
 
   const user = {
@@ -79,26 +91,30 @@ app.post("/register",(req,res)=>{
   users.push(user);
   saveData("users.json",users);
 
-  console.log("👤 Registered:", user);
+  console.log("✅ Saved user:", user);
 
   res.json({status:"registered"});
 });
 
-/* 🔑 LOGIN (FIXED FACE + PASSWORD) */
+/* =========================
+   LOGIN (FIXED)
+========================= */
 app.post("/login",(req,res)=>{
+
+  let users = loadData("users.json");
 
   const { username, password, face } = req.body;
 
   let user = null;
 
-  /* NORMAL LOGIN */
+  // normal login
   if(username && password){
     user = users.find(u =>
       u.username === username && u.password === password
     );
   }
 
-  /* FACE LOGIN (username-based match) */
+  // face login
   if(!user && username && face){
     user = users.find(u =>
       u.username === username && u.face
@@ -118,11 +134,12 @@ app.post("/login",(req,res)=>{
   }
 
   console.log("❌ Login failed");
-
   res.json({status:"fail"});
 });
 
-/* 🚪 LOGOUT */
+/* =========================
+   LOGOUT
+========================= */
 app.get("/logout",(req,res)=>{
   req.session.destroy(()=>res.redirect("/"));
 });
@@ -131,14 +148,17 @@ app.get("/logout",(req,res)=>{
    CATEGORY
 ========================= */
 app.post("/category",(req,res)=>{
+
+  let dataArr = loadData("category.json");
+
   const data = {
     ...req.body,
-    user: req.session.user || "guest",
-    time: new Date().toLocaleString()
+    user:req.session.user || "guest",
+    time:new Date().toLocaleString()
   };
 
-  categoryLogs.push(data);
-  saveData("category.json",categoryLogs);
+  dataArr.push(data);
+  saveData("category.json",dataArr);
 
   res.json({ok:true});
 });
@@ -147,14 +167,17 @@ app.post("/category",(req,res)=>{
    SOS
 ========================= */
 app.post("/sos",(req,res)=>{
+
+  let dataArr = loadData("sos.json");
+
   const data = {
     ...req.body,
-    user: req.session.user || "guest",
-    time: new Date().toLocaleString()
+    user:req.session.user || "guest",
+    time:new Date().toLocaleString()
   };
 
-  sosData.push(data);
-  saveData("sos.json",sosData);
+  dataArr.push(data);
+  saveData("sos.json",dataArr);
 
   console.log("🚨 SOS:", data);
 
@@ -162,17 +185,20 @@ app.post("/sos",(req,res)=>{
 });
 
 /* =========================
-   TRACKING
+   TRACK
 ========================= */
 app.post("/track",(req,res)=>{
+
+  let dataArr = loadData("track.json");
+
   const data = {
     ...req.body,
-    user: req.session.user || "guest",
-    time: new Date().toLocaleString()
+    user:req.session.user || "guest",
+    time:new Date().toLocaleString()
   };
 
-  trackingData.push(data);
-  saveData("track.json",trackingData);
+  dataArr.push(data);
+  saveData("track.json",dataArr);
 
   res.json({ok:true});
 });
@@ -188,11 +214,10 @@ function isAdmin(req,res,next){
   }
 }
 
-/* ADMIN APIs */
-app.get("/admin/sos",isAdmin,(req,res)=>res.json(sosData));
-app.get("/admin/track",isAdmin,(req,res)=>res.json(trackingData));
-app.get("/admin/users",isAdmin,(req,res)=>res.json(users));
-app.get("/admin/category",isAdmin,(req,res)=>res.json(categoryLogs));
+app.get("/admin/sos",isAdmin,(req,res)=>res.json(loadData("sos.json")));
+app.get("/admin/track",isAdmin,(req,res)=>res.json(loadData("track.json")));
+app.get("/admin/users",isAdmin,(req,res)=>res.json(loadData("users.json")));
+app.get("/admin/category",isAdmin,(req,res)=>res.json(loadData("category.json")));
 
 /* =========================
    START SERVER
