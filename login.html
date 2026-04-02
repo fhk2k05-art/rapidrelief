@@ -5,7 +5,6 @@
 
 <style>
 
-/* 🌌 BACKGROUND */
 body{
   margin:0;
   font-family:'Segoe UI',sans-serif;
@@ -22,7 +21,6 @@ body{
   color:white;
 }
 
-/* 🧊 GLASS CARD */
 .container{
   width:350px;
   padding:30px;
@@ -35,22 +33,14 @@ body{
   text-align:center;
 }
 
-/* 🏷 TITLE */
-h2{
-  margin-bottom:20px;
-}
-
-/* INPUTS */
 input{
   width:90%;
   padding:12px;
   margin:10px 0;
   border:none;
   border-radius:10px;
-  outline:none;
 }
 
-/* BUTTONS */
 button{
   width:95%;
   padding:12px;
@@ -58,34 +48,15 @@ button{
   border:none;
   border-radius:10px;
   cursor:pointer;
-  font-size:14px;
   transition:0.3s;
 }
 
-/* PRIMARY */
-.primary{
-  background:#00c6ff;
-  color:white;
-}
+.primary{ background:#00c6ff; }
+.secondary{ background:#333; }
+.face{ background:green; }
 
-/* SECONDARY */
-.secondary{
-  background:#333;
-  color:white;
-}
+button:hover{ transform:scale(1.05); }
 
-/* FACE BUTTON */
-.face{
-  background:green;
-  color:white;
-}
-
-/* HOVER EFFECT */
-button:hover{
-  transform:scale(1.05);
-}
-
-/* DIVIDER */
 hr{
   margin:20px 0;
   border:0;
@@ -100,7 +71,11 @@ hr{
 
 <div class="container">
 
-<h2>🚑 RapidRelief</h2>
+<!-- 🔥 LOGO -->
+<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px;">
+  <img src="logo.png" style="width:45px;height:45px;">
+  <h2>RapidRelief</h2>
+</div>
 
 <input id="username" placeholder="Username">
 <input id="password" type="password" placeholder="Password">
@@ -119,6 +94,7 @@ hr{
 
 /* 📸 CAPTURE FACE */
 async function captureFace(){
+
   const stream = await navigator.mediaDevices.getUserMedia({video:true});
   const video = document.createElement("video");
 
@@ -166,6 +142,12 @@ function register(){
 
 /* 📸 FACE REGISTER */
 async function registerFace(){
+
+  if(!username.value || !password.value){
+    alert("Enter username & password first ⚠️");
+    return;
+  }
+
   const face = await captureFace();
 
   fetch("/register",{
@@ -183,12 +165,21 @@ async function registerFace(){
 
 /* 😎 FACE LOGIN */
 async function loginFace(){
+
+  if(!username.value){
+    alert("Enter username for face login ⚠️");
+    return;
+  }
+
   const face = await captureFace();
 
   fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({face})
+    body:JSON.stringify({
+      username:username.value,
+      face
+    })
   })
   .then(res=>res.json())
   .then(handleLogin);
