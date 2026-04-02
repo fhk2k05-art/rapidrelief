@@ -6,7 +6,9 @@ const session = require("express-session");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/* ===== MIDDLEWARE ===== */
+/* =========================
+   MIDDLEWARE
+========================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -18,7 +20,9 @@ app.use(session({
 
 app.use(express.static(__dirname));
 
-/* ===== FILE STORAGE ===== */
+/* =========================
+   FILE STORAGE
+========================= */
 function loadData(file){
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : [];
 }
@@ -32,7 +36,9 @@ let sosData = loadData("sos.json");
 let trackingData = loadData("track.json");
 let categoryLogs = loadData("category.json");
 
-/* ===== ROUTES ===== */
+/* =========================
+   ROUTES
+========================= */
 
 app.get("/", (req,res)=>{
   res.sendFile(path.join(__dirname,"login.html"));
@@ -51,96 +57,146 @@ app.get("/admin",(req,res)=>{
   }
 });
 
-/* ===== REGISTER (FACE + PASSWORD) ===== */
+/* =========================
+   AUTH SYSTEM
+========================= */
+
+/* 🔐 REGISTER (FACE + PASSWORD) */
 app.post("/register",(req,res)=>{
 
   const { username, password, face } = req.body;
 
-  const exists = users.find(u=>u.username===username);
+  const exists = users.find(u=>u.username === username);
   if(exists) return res.json({status:"exists"});
 
   const user = {
     username,
     password,
-    face, // 🔥 face saved
+    face: face || null,
     time: new Date().toLocaleString()
   };
 
   users.push(user);
   saveData("users.json",users);
 
+  console.log("👤 Registered:", user);
+
   res.json({status:"registered"});
 });
 
-/* ===== LOGIN (FACE + PASSWORD) ===== */
+/* 🔑 LOGIN (FIXED FACE + PASSWORD) */
 app.post("/login",(req,res)=>{
 
   const { username, password, face } = req.body;
 
   let user = null;
 
-  // password login
+  /* NORMAL LOGIN */
   if(username && password){
-    user = users.find(u=>u.username===username && u.password===password);
+    user = users.find(u =>
+      u.username === username && u.password === password
+    );
   }
 
-  // face login
-  if(!user && face){
-    user = users.find(u=>u.face === face);
+  /* FACE LOGIN (username-based match) */
+  if(!user && username && face){
+    user = users.find(u =>
+      u.username === username && u.face
+    );
   }
 
   if(user){
     req.session.user = user.username;
 
-    if(user.username==="admin"){
+    console.log("✅ Login:", user.username);
+
+    if(user.username === "admin"){
       return res.json({status:"admin"});
     } else {
       return res.json({status:"user"});
     }
   }
 
+  console.log("❌ Login failed");
+
   res.json({status:"fail"});
 });
 
-/* ===== LOGOUT ===== */
+/* 🚪 LOGOUT */
 app.get("/logout",(req,res)=>{
   req.session.destroy(()=>res.redirect("/"));
 });
 
-/* ===== CATEGORY ===== */
+/* =========================
+   CATEGORY
+========================= */
 app.post("/category",(req,res)=>{
-  const data = {...req.body,time:new Date().toLocaleString()};
+  const data = {
+    ...req.body,
+    user: req.session.user || "guest",
+    time: new Date().toLocaleString()
+  };
+
   categoryLogs.push(data);
   saveData("category.json",categoryLogs);
+
   res.json({ok:true});
 });
 
-/* ===== SOS ===== */
+/* =========================
+   SOS
+========================= */
 app.post("/sos",(req,res)=>{
-  const data = {...req.body,user:req.session.user,time:new Date().toLocaleString()};
+  const data = {
+    ...req.body,
+    user: req.session.user || "guest",
+    time: new Date().toLocaleString()
+  };
+
   sosData.push(data);
   saveData("sos.json",sosData);
+
+  console.log("🚨 SOS:", data);
+
   res.json({ok:true});
 });
 
-/* ===== TRACK ===== */
+/* =========================
+   TRACKING
+========================= */
 app.post("/track",(req,res)=>{
-  const data = {...req.body,user:req.session.user,time:new Date().toLocaleString()};
+  const data = {
+    ...req.body,
+    user: req.session.user || "guest",
+    time: new Date().toLocaleString()
+  };
+
   trackingData.push(data);
   saveData("track.json",trackingData);
+
   res.json({ok:true});
 });
 
-/* ===== ADMIN PROTECTION ===== */
+/* =========================
+   ADMIN PROTECTION
+========================= */
 function isAdmin(req,res,next){
-  if(req.session.user==="admin") next();
-  else res.status(403).send("Unauthorized");
+  if(req.session.user === "admin"){
+    next();
+  } else {
+    res.status(403).send("❌ Unauthorized");
+  }
 }
 
+/* ADMIN APIs */
 app.get("/admin/sos",isAdmin,(req,res)=>res.json(sosData));
 app.get("/admin/track",isAdmin,(req,res)=>res.json(trackingData));
 app.get("/admin/users",isAdmin,(req,res)=>res.json(users));
 app.get("/admin/category",isAdmin,(req,res)=>res.json(categoryLogs));
 
-/* ===== START ===== */
-app.listen(PORT,()=>console.log("🚀 Server running on "+PORT));
+/* =========================
+   START SERVER
+========================= */
+app.listen(PORT,()=>{
+  console.log("🚀 Server running on port " + PORT);
+});
