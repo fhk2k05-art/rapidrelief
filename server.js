@@ -1,18 +1,28 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const session = require("express-session");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+/* =========================
+   MIDDLEWARE
+========================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(session({
+  secret: "secure_admin_key",
+  resave: false,
+  saveUninitialized: true
+}));
+
 app.use(express.static(__dirname));
 
 /* =========================
-   📁 LOAD DATA
+   LOAD / SAVE DATA
 ========================= */
-
 function loadData(file){
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : [];
 }
@@ -35,25 +45,29 @@ app.get("/", (req, res) => {
 });
 
 app.get("/dashboard", (req, res) => {
+  if(!req.session.user) return res.redirect("/");
   res.sendFile(path.join(__dirname, "rr.html"));
 });
 
 app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "admin.html"));
+  if(req.session.user === "admin"){
+    res.sendFile(path.join(__dirname, "admin.html"));
+  } else {
+    res.send("❌ Access Denied");
+  }
 });
 
 /* =========================
-   🔐 REGISTER
+   AUTH
 ========================= */
+
+/* REGISTER */
 app.post("/register", (req, res) => {
 
   const { username, password } = req.body;
 
   const exists = users.find(u => u.username === username);
-
-  if (exists) {
-    return res.json({ status: "exists" });
-  }
+  if (exists) return res.json({ status: "exists" });
 
   const user = {
     username,
@@ -69,9 +83,7 @@ app.post("/register", (req, res) => {
   res.json({ status: "registered" });
 });
 
-/* =========================
-   🔑 LOGIN
-========================= */
+/* LOGIN */
 app.post("/login", (req, res) => {
 
   const { username, password } = req.body;
@@ -81,26 +93,32 @@ app.post("/login", (req, res) => {
   );
 
   if (user) {
-    res.json({ status: "success" });
+    req.session.user = username;
+
+    if(username === "admin"){
+      return res.json({ status: "admin" });
+    } else {
+      return res.json({ status: "user" });
+    }
+
   } else {
     res.json({ status: "fail" });
   }
 });
 
-/* =========================
-   🚪 LOGOUT
-========================= */
+/* LOGOUT */
 app.get("/logout", (req, res) => {
-  res.redirect("/");
+  req.session.destroy(() => res.redirect("/"));
 });
 
 /* =========================
-   📌 CATEGORY
+   CATEGORY
 ========================= */
 app.post("/category", (req, res) => {
 
   const data = {
     ...req.body,
+    user: req.session.user || "guest",
     time: new Date().toLocaleString()
   };
 
@@ -111,12 +129,13 @@ app.post("/category", (req, res) => {
 });
 
 /* =========================
-   🚨 SOS
+   SOS
 ========================= */
 app.post("/sos", (req, res) => {
 
   const data = {
     ...req.body,
+    user: req.session.user || "guest",
     time: new Date().toLocaleString()
   };
 
@@ -129,12 +148,13 @@ app.post("/sos", (req, res) => {
 });
 
 /* =========================
-   📍 TRACKING
+   TRACK
 ========================= */
 app.post("/track", (req, res) => {
 
   const data = {
     ...req.body,
+    user: req.session.user || "guest",
     time: new Date().toLocaleString()
   };
 
@@ -145,29 +165,26 @@ app.post("/track", (req, res) => {
 });
 
 /* =========================
-   🧑‍💼 ADMIN APIs
+   ADMIN PROTECTION
 ========================= */
 
-app.get("/admin/sos", (req, res) => {
-  res.json(sosData);
-});
+function isAdmin(req, res, next){
+  if(req.session.user === "admin"){
+    next();
+  } else {
+    res.status(403).send("❌ Unauthorized");
+  }
+}
 
-app.get("/admin/track", (req, res) => {
-  res.json(trackingData);
-});
-
-app.get("/admin/users", (req, res) => {
-  res.json(users);
-});
-
-app.get("/admin/category", (req, res) => {
-  res.json(categoryLogs);
-});
+/* ADMIN APIs */
+app.get("/admin/sos", isAdmin, (req,res)=>res.json(sosData));
+app.get("/admin/track", isAdmin, (req,res)=>res.json(trackingData));
+app.get("/admin/users", isAdmin, (req,res)=>res.json(users));
+app.get("/admin/category", isAdmin, (req,res)=>res.json(categoryLogs));
 
 /* =========================
-   🚀 START
+   START
 ========================= */
-
 app.listen(PORT, () => {
   console.log("🚀 Server running on port " + PORT);
 });
