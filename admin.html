@@ -1,19 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Admin PRO</title>
+<title>RapidRelief Admin ULTRA</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
-/* 🌌 BACKGROUND */
+/* 🌈 ANIMATED BACKGROUND */
 body {
   margin:0;
   font-family:'Segoe UI', sans-serif;
   display:flex;
-  background:linear-gradient(135deg,#0f172a,#020617);
   color:white;
+
+  background:linear-gradient(-45deg,#020617,#0f172a,#020617,#020617);
+  background-size:400% 400%;
+  animation:bgMove 12s ease infinite;
+}
+
+@keyframes bgMove {
+  0% {background-position:0% 50%;}
+  50% {background-position:100% 50%;}
+  100% {background-position:0% 50%;}
 }
 
 /* 🔥 SIDEBAR */
@@ -21,7 +30,7 @@ body {
   width:230px;
   padding:20px;
   background:rgba(255,255,255,0.05);
-  backdrop-filter:blur(20px);
+  backdrop-filter:blur(25px);
   border-right:1px solid rgba(255,255,255,0.1);
 }
 
@@ -31,7 +40,7 @@ body {
   padding:12px;
   background:rgba(255,255,255,0.05);
   border:none;
-  border-radius:10px;
+  border-radius:12px;
   color:white;
   cursor:pointer;
   transition:0.3s;
@@ -39,7 +48,8 @@ body {
 
 .sidebar button:hover {
   background:linear-gradient(135deg,#00c6ff,#0072ff);
-  transform:scale(1.05);
+  transform:translateX(5px) scale(1.05);
+  box-shadow:0 0 15px rgba(0,198,255,0.6);
 }
 
 /* 🧠 MAIN */
@@ -51,7 +61,7 @@ body {
 .main h2 {
   font-weight:600;
   letter-spacing:1px;
-  text-shadow: 0 0 10px rgba(0,198,255,0.6);
+  text-shadow:0 0 20px rgba(0,198,255,0.8);
 }
 
 /* 📦 CONTENT */
@@ -67,39 +77,59 @@ body {
   overflow:auto;
   background:rgba(255,255,255,0.05);
   backdrop-filter:blur(20px);
-  border-radius:15px;
+  border-radius:18px;
   padding:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
 }
 
 /* 🗺️ MAP */
 #map {
   width:60%;
   height:520px;
-  border-radius:15px;
+  border-radius:18px;
   overflow:hidden;
-  box-shadow:0 10px 30px rgba(0,0,0,0.6);
+  box-shadow:0 15px 40px rgba(0,0,0,0.7);
 }
 
 /* 🧾 CARD */
 .card {
-  margin:10px;
+  margin:12px;
   padding:15px;
   background:rgba(255,255,255,0.08);
-  border-radius:12px;
-  backdrop-filter:blur(10px);
+  border-radius:15px;
+  backdrop-filter:blur(15px);
   transition:0.3s;
+  position:relative;
 }
 
 .card:hover {
-  transform:translateY(-5px);
-  box-shadow:0 10px 20px rgba(0,0,0,0.5);
+  transform:translateY(-6px) scale(1.02);
+  box-shadow:0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* 🚨 SOS PULSE */
+.card::before {
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:3px;
+  background:linear-gradient(90deg,#ff0000,#ff4d4d);
+  animation:pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {opacity:0.2;}
+  50% {opacity:1;}
+  100% {opacity:0.2;}
 }
 
 /* 🚦 STATUS */
 .status {
   margin-top:8px;
-  padding:5px 10px;
-  border-radius:8px;
+  padding:6px 12px;
+  border-radius:10px;
   font-size:12px;
 }
 
@@ -121,9 +151,9 @@ body {
 /* 🔘 BUTTONS */
 .card button {
   margin:5px;
-  padding:8px 12px;
+  padding:8px 14px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   cursor:pointer;
   background:linear-gradient(135deg,#00c6ff,#0072ff);
   color:white;
@@ -131,8 +161,8 @@ body {
 }
 
 .card button:hover {
-  transform:scale(1.05);
-  box-shadow:0 5px 15px rgba(0,198,255,0.4);
+  transform:scale(1.1);
+  box-shadow:0 0 20px rgba(0,198,255,0.7);
 }
 
 </style>
@@ -147,7 +177,7 @@ body {
 </div>
 
 <div class="main">
-  <h2>🚑 Admin Dashboard PRO</h2>
+  <h2>🚑 Admin Control Center</h2>
 
   <div class="content">
     <div class="list" id="list"></div>
@@ -206,10 +236,7 @@ function dispatch(index){
   fetch("/admin/update-status",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      index,
-      status:"dispatched"
-    })
+    body:JSON.stringify({index,status:"dispatched"})
   })
   .then(()=>loadSOS());
 }
@@ -219,36 +246,25 @@ function resolve(index){
   fetch("/admin/update-status",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      index,
-      status:"resolved"
-    })
+    body:JSON.stringify({index,status:"resolved"})
   })
   .then(()=>loadSOS());
 }
 
 /* 📍 TRACK */
 function loadTrack(){
-
   fetch("/admin/track")
   .then(res=>res.json())
   .then(data=>{
-
     markers.forEach(m=>map.removeLayer(m));
     markers=[];
-
     let html="";
-
     data.slice(-20).forEach(t=>{
       html+=`<div class="card">📍 ${t.lat}, ${t.lon}</div>`;
-      let marker = L.marker([t.lat,t.lon]).addTo(map);
+      let marker=L.marker([t.lat,t.lon]).addTo(map);
       markers.push(marker);
     });
-
-    document.getElementById("list").innerHTML = html;
-
-    let last=data[data.length-1];
-    if(last) map.setView([last.lat,last.lon],15);
+    document.getElementById("list").innerHTML=html;
   });
 }
 
