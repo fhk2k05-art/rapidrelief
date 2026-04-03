@@ -4,29 +4,30 @@
 <title>RapidRelief Admin</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
+/* 🌌 BASE */
 body{
   margin:0;
   font-family:Segoe UI;
   display:flex;
-  background:#0f172a;
+  background:#020617;
   color:white;
 }
 
 /* SIDEBAR */
 .sidebar{
-  width:240px;
+  width:230px;
   background:#020617;
-  height:100vh;
+  border-right:1px solid rgba(255,255,255,0.05);
   padding:20px;
 }
 
 .sidebar h2{
   text-align:center;
+  color:#38bdf8;
 }
 
 .sidebar button{
@@ -34,10 +35,16 @@ body{
   padding:12px;
   margin:10px 0;
   border:none;
-  background:#1e293b;
+  border-radius:10px;
+  background:rgba(255,255,255,0.05);
   color:white;
-  border-radius:8px;
   cursor:pointer;
+  transition:0.3s;
+}
+
+.sidebar button:hover{
+  background:#0ea5e9;
+  transform:translateX(5px);
 }
 
 /* MAIN */
@@ -54,7 +61,7 @@ body{
 }
 
 .logout{
-  background:red;
+  background:#ef4444;
   border:none;
   padding:10px;
   border-radius:8px;
@@ -70,18 +77,22 @@ body{
 }
 
 .card{
-  background:#1e293b;
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(15px);
   padding:20px;
-  border-radius:12px;
+  border-radius:15px;
   text-align:center;
+
+  box-shadow:0 0 20px rgba(14,165,233,0.15);
 }
 
 /* CHART */
 .chart-box{
-  background:#1e293b;
+  background:rgba(255,255,255,0.05);
   padding:20px;
-  border-radius:12px;
+  border-radius:15px;
   margin-top:20px;
+  text-align:center;
 }
 
 /* TABLE */
@@ -93,7 +104,7 @@ table{
 
 th,td{
   padding:12px;
-  border-bottom:1px solid #334155;
+  border-bottom:1px solid rgba(255,255,255,0.1);
 }
 
 /* MOBILE */
@@ -111,24 +122,22 @@ th,td{
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
-  <h2>Admin</h2>
+  <h2>⚡ Admin</h2>
   <button onclick="loadUsers()">Users</button>
   <button onclick="loadSOS()">SOS</button>
   <button onclick="loadTrack()">Tracking</button>
   <button onclick="loadCategory()">Category</button>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
   <div class="top">
-    <h1>Dashboard</h1>
+    <h1>🚀 Dashboard</h1>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
-  <!-- STATS -->
+  <!-- CARDS -->
   <div class="cards">
     <div class="card"><h3 id="u">0</h3><p>Users</p></div>
     <div class="card"><h3 id="s">0</h3><p>SOS</p></div>
@@ -136,9 +145,9 @@ th,td{
     <div class="card"><h3 id="c">0</h3><p>Category</p></div>
   </div>
 
-  <!-- CHART -->
+  <!-- DONUT CHART -->
   <div class="chart-box">
-    <canvas id="chart"></canvas>
+    <canvas id="chart" width="200"></canvas>
   </div>
 
   <!-- TABLE -->
@@ -153,19 +162,29 @@ th,td{
 
 let chart;
 
-/* UPDATE CHART */
+/* DONUT CHART */
 function updateChart(u,s,t,c){
 
   if(chart) chart.destroy();
 
   chart = new Chart(document.getElementById("chart"), {
-    type:"bar",
+    type:"doughnut",
     data:{
       labels:["Users","SOS","Tracking","Category"],
       datasets:[{
-        label:"System Data",
         data:[u,s,t,c],
+        backgroundColor:[
+          "#38bdf8",
+          "#ef4444",
+          "#22c55e",
+          "#f59e0b"
+        ]
       }]
+    },
+    options:{
+      plugins:{
+        legend:{ labels:{ color:"white" } }
+      }
     }
   });
 }
@@ -174,7 +193,6 @@ function updateChart(u,s,t,c){
 function render(data){
   const tbody=document.querySelector("#table tbody");
   tbody.innerHTML="";
-
   data.forEach(d=>{
     let row=document.createElement("tr");
     row.innerHTML=`<td>${JSON.stringify(d)}</td>`;
@@ -182,39 +200,32 @@ function render(data){
   });
 }
 
-/* LOAD USERS */
+/* LOAD FUNCTIONS */
 function loadUsers(){
   fetch("/admin/users").then(r=>r.json()).then(d=>{
     document.getElementById("u").innerText=d.length;
     render(d);
-    updateChart(d.length,0,0,0);
   });
 }
 
-/* LOAD SOS */
 function loadSOS(){
   fetch("/admin/sos").then(r=>r.json()).then(d=>{
     document.getElementById("s").innerText=d.length;
     render(d);
-    updateChart(0,d.length,0,0);
   });
 }
 
-/* LOAD TRACK */
 function loadTrack(){
   fetch("/admin/track").then(r=>r.json()).then(d=>{
     document.getElementById("t").innerText=d.length;
     render(d);
-    updateChart(0,0,d.length,0);
   });
 }
 
-/* LOAD CATEGORY */
 function loadCategory(){
   fetch("/admin/category").then(r=>r.json()).then(d=>{
     document.getElementById("c").innerText=d.length;
     render(d);
-    updateChart(0,0,0,d.length);
   });
 }
 
