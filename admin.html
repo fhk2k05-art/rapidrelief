@@ -8,7 +8,6 @@
 
 <style>
 
-/* 🌌 BASE */
 body{
   margin:0;
   font-family:Segoe UI;
@@ -21,7 +20,6 @@ body{
 .sidebar{
   width:230px;
   background:#020617;
-  border-right:1px solid rgba(255,255,255,0.05);
   padding:20px;
 }
 
@@ -36,15 +34,9 @@ body{
   margin:10px 0;
   border:none;
   border-radius:10px;
-  background:rgba(255,255,255,0.05);
+  background:#1e293b;
   color:white;
   cursor:pointer;
-  transition:0.3s;
-}
-
-.sidebar button:hover{
-  background:#0ea5e9;
-  transform:translateX(5px);
 }
 
 /* MAIN */
@@ -53,45 +45,17 @@ body{
   padding:20px;
 }
 
-/* TOP */
-.top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.logout{
-  background:#ef4444;
-  border:none;
-  padding:10px;
-  border-radius:8px;
-  color:white;
-}
-
 /* CARDS */
 .cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:15px;
-  margin-top:20px;
 }
 
 .card{
-  background:rgba(255,255,255,0.05);
-  backdrop-filter:blur(15px);
+  background:#1e293b;
   padding:20px;
-  border-radius:15px;
-  text-align:center;
-
-  box-shadow:0 0 20px rgba(14,165,233,0.15);
-}
-
-/* CHART */
-.chart-box{
-  background:rgba(255,255,255,0.05);
-  padding:20px;
-  border-radius:15px;
-  margin-top:20px;
+  border-radius:12px;
   text-align:center;
 }
 
@@ -104,17 +68,26 @@ table{
 
 th,td{
   padding:12px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  border-bottom:1px solid #334155;
+  text-align:center;
 }
 
-/* MOBILE */
-@media(max-width:768px){
-  .cards{
-    grid-template-columns:1fr 1fr;
-  }
-  .sidebar{
-    display:none;
-  }
+/* BUTTON */
+.nav-btn{
+  padding:6px 10px;
+  background:#22c55e;
+  border:none;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+}
+
+.logout{
+  background:red;
+  padding:10px;
+  border:none;
+  color:white;
+  border-radius:8px;
 }
 
 </style>
@@ -132,12 +105,11 @@ th,td{
 
 <div class="main">
 
-  <div class="top">
-    <h1>🚀 Dashboard</h1>
+  <div style="display:flex;justify-content:space-between;">
+    <h1>🚀 Control Panel</h1>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
-  <!-- CARDS -->
   <div class="cards">
     <div class="card"><h3 id="u">0</h3><p>Users</p></div>
     <div class="card"><h3 id="s">0</h3><p>SOS</p></div>
@@ -145,14 +117,17 @@ th,td{
     <div class="card"><h3 id="c">0</h3><p>Category</p></div>
   </div>
 
-  <!-- DONUT CHART -->
-  <div class="chart-box">
-    <canvas id="chart" width="200"></canvas>
-  </div>
-
   <!-- TABLE -->
   <table id="table">
-    <thead><tr><th>Data</th></tr></thead>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Latitude</th>
+        <th>Longitude</th>
+        <th>Time</th>
+        <th>Navigate</th>
+      </tr>
+    </thead>
     <tbody></tbody>
   </table>
 
@@ -160,47 +135,41 @@ th,td{
 
 <script>
 
-let chart;
-
-/* DONUT CHART */
-function updateChart(u,s,t,c){
-
-  if(chart) chart.destroy();
-
-  chart = new Chart(document.getElementById("chart"), {
-    type:"doughnut",
-    data:{
-      labels:["Users","SOS","Tracking","Category"],
-      datasets:[{
-        data:[u,s,t,c],
-        backgroundColor:[
-          "#38bdf8",
-          "#ef4444",
-          "#22c55e",
-          "#f59e0b"
-        ]
-      }]
-    },
-    options:{
-      plugins:{
-        legend:{ labels:{ color:"white" } }
-      }
-    }
-  });
+/* NAVIGATION */
+function openMap(lat,lon){
+  window.open(`https://www.google.com/maps?q=${lat},${lon}`);
 }
 
-/* RENDER */
+/* RENDER TABLE */
 function render(data){
+
   const tbody=document.querySelector("#table tbody");
   tbody.innerHTML="";
+
   data.forEach(d=>{
+
+    let lat = d.lat || "-";
+    let lon = d.lon || "-";
+    let user = d.user || d.username || "Unknown";
+    let time = d.time || "-";
+
     let row=document.createElement("tr");
-    row.innerHTML=`<td>${JSON.stringify(d)}</td>`;
+
+    row.innerHTML=`
+      <td>${user}</td>
+      <td>${lat}</td>
+      <td>${lon}</td>
+      <td>${time}</td>
+      <td>
+        ${lat !== "-" ? `<button class="nav-btn" onclick="openMap(${lat},${lon})">📍 Go</button>` : "-"}
+      </td>
+    `;
+
     tbody.appendChild(row);
   });
 }
 
-/* LOAD FUNCTIONS */
+/* LOAD USERS */
 function loadUsers(){
   fetch("/admin/users").then(r=>r.json()).then(d=>{
     document.getElementById("u").innerText=d.length;
@@ -208,6 +177,7 @@ function loadUsers(){
   });
 }
 
+/* LOAD SOS */
 function loadSOS(){
   fetch("/admin/sos").then(r=>r.json()).then(d=>{
     document.getElementById("s").innerText=d.length;
@@ -215,6 +185,7 @@ function loadSOS(){
   });
 }
 
+/* LOAD TRACK */
 function loadTrack(){
   fetch("/admin/track").then(r=>r.json()).then(d=>{
     document.getElementById("t").innerText=d.length;
@@ -222,6 +193,7 @@ function loadTrack(){
   });
 }
 
+/* LOAD CATEGORY */
 function loadCategory(){
   fetch("/admin/category").then(r=>r.json()).then(d=>{
     document.getElementById("c").innerText=d.length;
@@ -235,19 +207,7 @@ function logout(){
 }
 
 /* INITIAL LOAD */
-Promise.all([
-  fetch("/admin/users").then(r=>r.json()),
-  fetch("/admin/sos").then(r=>r.json()),
-  fetch("/admin/track").then(r=>r.json()),
-  fetch("/admin/category").then(r=>r.json())
-]).then(([u,s,t,c])=>{
-  document.getElementById("u").innerText=u.length;
-  document.getElementById("s").innerText=s.length;
-  document.getElementById("t").innerText=t.length;
-  document.getElementById("c").innerText=c.length;
-
-  updateChart(u.length,s.length,t.length,c.length);
-});
+loadUsers();
 
 </script>
 
