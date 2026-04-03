@@ -1,74 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Panel</title>
+<title>RapidRelief Admin Ultimate</title>
 
-<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
-body{
+/* 🌈 BACKGROUND */
+body {
   margin:0;
   font-family:'Segoe UI',sans-serif;
-  background:#0f172a;
   color:white;
+  overflow:hidden;
+
+  background: linear-gradient(-45deg,#0f172a,#1e293b,#020617,#111827);
+  background-size:400% 400%;
+  animation: bgMove 10s infinite alternate;
+}
+
+@keyframes bgMove {
+  0% {background-position:0%}
+  100% {background-position:100%}
+}
+
+/* 🔝 NAV */
+.nav {
   display:flex;
+  justify-content:space-between;
+  padding:15px 25px;
+  backdrop-filter:blur(15px);
+  background:rgba(255,255,255,0.05);
 }
 
-/* SIDEBAR */
-.sidebar{
-  width:220px;
-  background:#020617;
-  height:100vh;
-  padding:20px;
+.title { font-size:22px; font-weight:bold; }
+
+/* 📊 STATS */
+.stats {
+  display:flex;
+  gap:15px;
+  padding:15px;
 }
 
-.sidebar h2{
-  margin-bottom:30px;
-}
-
-.sidebar button{
-  width:100%;
-  margin:10px 0;
-  padding:10px;
-  background:#1e293b;
-  border:none;
-  color:white;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-/* MAIN */
-.main{
+.box {
   flex:1;
   padding:20px;
-}
-
-/* CARDS */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:15px;
-}
-
-.card{
-  background:#1e293b;
-  padding:20px;
   border-radius:15px;
-  box-shadow:0 0 10px rgba(0,0,0,0.5);
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
+  text-align:center;
+  transition:0.3s;
 }
 
-/* SOS FEED */
-.feed{
-  margin-top:20px;
+.box:hover {
+  transform:scale(1.05);
 }
 
-.feed div{
-  background:#111827;
-  padding:15px;
-  margin:10px 0;
+/* 🔘 BUTTONS */
+.actions {
+  padding:10px 15px;
+}
+
+.actions button {
+  margin:5px;
+  padding:10px 15px;
+  border:none;
   border-radius:10px;
-  border-left:4px solid red;
+  background:#00c6ff;
+  color:white;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.actions button:hover {
+  transform:scale(1.1);
+}
+
+/* 📦 MAIN */
+.container {
+  display:flex;
+  height:calc(100vh - 140px);
+}
+
+/* 📋 LIST */
+.list {
+  width:35%;
+  overflow:auto;
+  padding:10px;
+}
+
+/* 🗺 MAP */
+#map {
+  width:65%;
+  height:100%;
+  border-radius:20px;
+}
+
+/* 🧾 CARD */
+.card {
+  margin:10px;
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
+  transition:0.3s;
+}
+
+.card:hover {
+  transform:translateX(5px);
+}
+
+/* 🚨 SOS PULSE */
+.pulse {
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {box-shadow:0 0 0 0 red;}
+  100% {box-shadow:0 0 20px 10px transparent;}
+}
+
+/* 🔔 NOTIFICATION */
+.notify {
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:red;
+  padding:15px;
+  border-radius:10px;
+  display:none;
 }
 
 </style>
@@ -76,57 +136,141 @@ body{
 
 <body>
 
-<div class="sidebar">
-  <h2>🚑 Admin</h2>
-
-  <button onclick="loadData()">Dashboard</button>
-  <button onclick="logout()">Logout</button>
+<div class="nav">
+  <div class="title">🚨 RapidRelief Ultimate</div>
+  <div>🟢 Live Monitoring</div>
 </div>
 
-<div class="main">
-
-<h1>📊 Control Panel</h1>
-
-<div class="grid">
-  <div class="card">👤 Users: <span id="users">0</span></div>
-  <div class="card">🚨 SOS: <span id="sos">0</span></div>
-  <div class="card">📍 Active: <span id="active">0</span></div>
+<div class="stats">
+  <div class="box">🚑 <br> <span id="med">0</span></div>
+  <div class="box">🔥 <br> <span id="fire">0</span></div>
+  <div class="box">🚓 <br> <span id="crime">0</span></div>
 </div>
 
-<div class="feed" id="feed"></div>
-
+<div class="actions">
+  <button onclick="loadSOS()">🚨 SOS</button>
+  <button onclick="loadTrack()">📍 Tracking</button>
+  <button onclick="loadUsers()">👤 Users</button>
 </div>
+
+<div class="container">
+  <div class="list" id="list"></div>
+  <div id="map"></div>
+</div>
+
+<div class="notify" id="notify">🚨 NEW SOS ALERT!</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-const socket = io();
+let map = L.map('map').setView([10.8505,76.2711],7);
 
-/* LOAD DATA */
-function loadData(){
-  fetch("/admin/data")
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+.addTo(map);
+
+let markers=[];
+let lastCount=0;
+
+/* 🔔 ALERT SOUND */
+function playSound(){
+  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+}
+
+/* 🔔 SHOW NOTIFICATION */
+function showNotify(){
+  let n=document.getElementById("notify");
+  n.style.display="block";
+  setTimeout(()=>n.style.display="none",3000);
+}
+
+/* 🚨 SOS */
+function loadSOS(){
+
+  fetch("/admin/sos")
   .then(res=>res.json())
   .then(data=>{
-    document.getElementById("users").innerText=data.users.length;
-    document.getElementById("sos").innerText=data.sos.length;
+
+    if(data.length > lastCount){
+      playSound();
+      showNotify();
+    }
+
+    lastCount = data.length;
+
+    markers.forEach(m=>map.removeLayer(m));
+    markers=[];
+
+    let html="";
+    let med=0,fire=0,crime=0;
+
+    data.slice().reverse().forEach(s=>{
+
+      if(s.type==="Medical") med++;
+      if(s.type==="Fire") fire++;
+      if(s.type==="Crime") crime++;
+
+      html+=`
+      <div class="card pulse">
+        🚨 ${s.type}<br>
+        📍 ${s.lat}, ${s.lon}<br>
+        🕒 ${s.time}
+      </div>`;
+
+      let m=L.marker([s.lat,s.lon]).addTo(map);
+      markers.push(m);
+    });
+
+    document.getElementById("list").innerHTML=html;
+    document.getElementById("med").innerText=med;
+    document.getElementById("fire").innerText=fire;
+    document.getElementById("crime").innerText=crime;
+
   });
 }
 
-/* REALTIME SOS */
-socket.on("sos",data=>{
-  const div=document.createElement("div");
-  div.innerHTML=`
-    <b>${data.user}</b><br>
-    ${data.lat}, ${data.lon}
-  `;
-  document.getElementById("feed").prepend(div);
-});
+/* 📍 TRACK */
+function loadTrack(){
 
-/* LOGOUT */
-function logout(){
-  window.location="/logout";
+  fetch("/admin/track")
+  .then(res=>res.json())
+  .then(data=>{
+
+    markers.forEach(m=>map.removeLayer(m));
+    markers=[];
+
+    data.slice(-20).forEach(t=>{
+      let m=L.marker([t.lat,t.lon]).addTo(map);
+      markers.push(m);
+    });
+
+  });
 }
 
-loadData();
+/* 👤 USERS */
+function loadUsers(){
+
+  fetch("/admin/users")
+  .then(res=>res.json())
+  .then(data=>{
+
+    let html="";
+
+    data.forEach(u=>{
+      html+=`
+      <div class="card">
+        👤 ${u.username}<br>
+        🕒 ${u.time}
+      </div>`;
+    });
+
+    document.getElementById("list").innerHTML=html;
+  });
+}
+
+/* 🔄 AUTO */
+setInterval(loadSOS,3000);
+loadSOS();
 
 </script>
 
