@@ -27,6 +27,12 @@ body {
   color:white;
 }
 
+/* LOGO */
+.login-logo{
+  width:200px;
+  margin-bottom:20px;
+}
+
 /* INPUT */
 input {
   width:100%;
@@ -36,31 +42,26 @@ input {
   border-radius:8px;
 }
 
-/* BUTTONS */
+/* BUTTON ROW */
 .btn-row {
   display:flex;
   justify-content:space-between;
 }
 
-.login-btn {
-  background:#06b6d4;
-  color:white;
-}
-
-.register-btn {
-  background:#16a34a;
-  color:white;
-}
-
+/* BUTTONS */
 button {
   border:none;
   padding:10px;
   border-radius:8px;
   cursor:pointer;
   width:48%;
+  color:white;
 }
 
-/* FACE SECTION */
+.login-btn { background:#06b6d4; }
+.register-btn { background:#16a34a; }
+
+/* FACE */
 .face-box {
   margin-top:20px;
 }
@@ -74,7 +75,6 @@ video {
 .face-btn {
   margin-top:10px;
   background:#f59e0b;
-  color:white;
   width:100%;
 }
 
@@ -86,7 +86,8 @@ video {
 
 <div class="container">
 
-  <h2>RapidRelief Login</h2>
+  <!-- ✅ LOGO -->
+  <img src="logo.png" class="login-logo">
 
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
@@ -102,7 +103,6 @@ video {
 
   <div class="face-box">
     <video id="video" autoplay playsinline></video>
-
     <button class="face-btn" onclick="openCamera()">Use Face</button>
   </div>
 
@@ -112,51 +112,64 @@ video {
 
 let stream;
 
-/* ✅ CAMERA ONLY WHEN CLICKED */
+/* CAMERA */
 function openCamera(){
   navigator.mediaDevices.getUserMedia({video:true})
   .then(s=>{
     stream=s;
-
     const video=document.getElementById("video");
     video.srcObject=stream;
-
     video.style.display="block";
   })
-  .catch(()=>{
-    alert("Camera permission denied ❌");
-  });
+  .catch(()=>alert("Camera denied ❌"));
 }
 
-/* LOGIN */
+/* LOGIN FIXED */
 function login(){
+
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value.trim();
+
+  if(!email || !password){
+    alert("Please fill all fields ❌");
+    return;
+  }
+
   fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      email:document.getElementById("email").value,
-      password:document.getElementById("password").value
-    })
+    body:JSON.stringify({email,password})
   })
-  .then(res=>res.text())
-  .then(msg=>{
-    if(msg==="success") window.location="rr.html";
-    else alert("Login failed ❌");
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.status==="success"){
+      window.location="rr.html";
+    } else {
+      alert(data.message || "Login failed ❌");
+    }
   });
 }
 
-/* REGISTER */
+/* REGISTER FIXED */
 function register(){
+
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value.trim();
+
+  if(!email || !password){
+    alert("Fill all fields ❌");
+    return;
+  }
+
   fetch("/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      email:document.getElementById("email").value,
-      password:document.getElementById("password").value
-    })
+    body:JSON.stringify({email,password})
   })
-  .then(res=>res.text())
-  .then(msg=>alert(msg));
+  .then(res=>res.json())
+  .then(data=>{
+    alert(data.message || "Registered");
+  });
 }
 
 </script>
