@@ -10,7 +10,7 @@
 /* 🌌 BACKGROUND */
 body {
   margin:0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:white;
 
   background:
@@ -24,18 +24,12 @@ nav {
   justify-content:space-between;
   align-items:center;
   padding:18px 30px;
-
   background:rgba(255,255,255,0.03);
   backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
-nav h2 {
-  font-size:20px;
-  font-weight:600;
-}
-
-/* SECTION TITLE */
+/* SECTION */
 .section-title {
   padding:30px 30px 10px;
   opacity:0.8;
@@ -46,7 +40,7 @@ nav h2 {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:20px;
-  padding:0 30px 10px;
+  padding:0 30px;
 }
 
 /* CARD */
@@ -55,58 +49,44 @@ nav h2 {
   padding:30px;
   border-radius:18px;
   text-align:center;
-  font-size:18px;
-
   border:1px solid rgba(255,255,255,0.08);
-
-  transition:all 0.25s ease;
+  transition:0.25s;
 }
 
 .card:hover {
-  transform:translateY(-6px);
+  transform:translateY(-5px);
   background:rgba(255,255,255,0.08);
-  box-shadow:0 10px 30px rgba(0,0,0,0.5);
 }
 
 .card.active {
   background:linear-gradient(135deg,#0ea5e9,#2563eb);
 }
 
-/* BUTTON GROUP */
+/* BUTTONS */
 .btn-group {
   padding:20px 30px;
 }
 
 button {
   width:100%;
-  padding:16px;
+  padding:15px;
   margin:8px 0;
   border:none;
-  border-radius:16px;
-  font-size:16px;
+  border-radius:15px;
   color:white;
   cursor:pointer;
-  transition:all 0.25s ease;
 }
 
-/* BUTTON COLORS */
-.sos { background:linear-gradient(135deg,#ef4444,#dc2626); font-size:18px; }
+.sos { background:#dc2626; }
 .track { background:#1e293b; }
 .call { background:#ea580c; }
 .navbtn { background:#16a34a; }
-
-button:hover {
-  transform:scale(1.02);
-  opacity:0.9;
-}
 
 /* MAP */
 #map {
   height:300px;
   margin:20px 30px;
   border-radius:18px;
-  border:1px solid rgba(255,255,255,0.08);
-  box-shadow:0 20px 50px rgba(0,0,0,0.7);
 }
 
 /* NEARBY */
@@ -114,20 +94,12 @@ button:hover {
   padding:20px 30px;
 }
 
-.nearby h3 {
-  margin-bottom:10px;
-}
-
 .nearby button {
   width:auto;
-  padding:10px 16px;
+  padding:10px;
   margin:5px;
-  border-radius:12px;
+  border-radius:10px;
   background:#1e293b;
-}
-
-.nearby button:hover {
-  background:#334155;
 }
 
 </style>
@@ -162,20 +134,20 @@ button:hover {
 
 <div class="nearby">
   <h3>📍 Nearby Help</h3>
-
   <button onclick="findPlace('hospital')">🚑 Hospital</button>
   <button onclick="findPlace('police')">🚓 Police</button>
   <button onclick="findPlace('fire_station')">🔥 Fire</button>
-
   <div id="result"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+
 let selectedType = "Medical";
 let map;
 let userLat, userLon;
+let currentMarker;
 
 /* MAP */
 navigator.geolocation.getCurrentPosition(pos=>{
@@ -187,33 +159,35 @@ navigator.geolocation.getCurrentPosition(pos=>{
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
     .addTo(map);
 
-  L.marker([userLat,userLon])
-    .addTo(map)
-    .bindPopup("You are here")
-    .openPopup();
+  L.marker([userLat,userLon]).addTo(map)
+    .bindPopup("You are here").openPopup();
 });
 
-/* CATEGORY */
+/* CATEGORY + BACKGROUND */
 function selectType(el,type){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
+
   selectedType = type;
+
+  const bg = {
+    Medical:"https://images.unsplash.com/photo-1586773860418-d37222d8fce3",
+    Fire:"https://images.unsplash.com/photo-1603398938378-e54eab446dde",
+    Crime:"https://images.unsplash.com/photo-1504215680853-026ed2a45def",
+    Mechanical:"https://images.unsplash.com/photo-1515923256482-1c04580b477c"
+  };
+
+  document.body.style.background =
+    `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('${bg[type]}') center/cover`;
 }
 
 /* SOS */
 function sendSOS(){
-  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
-
   fetch("/sos",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      lat:userLat,
-      lon:userLon,
-      type:selectedType
-    })
+    body:JSON.stringify({lat:userLat,lon:userLon,type:selectedType})
   });
-
   alert("🚨 SOS SENT");
 }
 
@@ -232,78 +206,92 @@ function startTracking(){
       });
     });
   },5000);
-
-  alert("📍 Tracking started");
 }
 
 /* CALL */
 function callEmergency(){
-  window.location.href = "tel:112";
+  window.location.href="tel:112";
 }
 
-/* NAVIGATION */
+/* NAV */
 function navigateHelp(){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${userLat},${userLon}`);
 }
 
 /* SMART SOS */
-let lastMove = Date.now();
+let lastMove=Date.now();
 
-window.addEventListener("devicemotion", (event)=>{
-  const acc = event.accelerationIncludingGravity;
-
-  if(acc && (Math.abs(acc.x)>20 || Math.abs(acc.y)>20 || Math.abs(acc.z)>20)){
-    autoSOS("Fall detected");
+window.addEventListener("devicemotion",(e)=>{
+  const a=e.accelerationIncludingGravity;
+  if(a && (Math.abs(a.x)>20||Math.abs(a.y)>20||Math.abs(a.z)>20)){
+    sendSOS();
   }
-
-  lastMove = Date.now();
+  lastMove=Date.now();
 });
 
-setInterval(()=>{
-  if(Date.now() - lastMove > 60000){
-    autoSOS("No movement");
-  }
-},10000);
-
-function autoSOS(reason){
-  alert("🚨 AUTO SOS: " + reason);
-  sendSOS();
-}
-
-/* NEARBY */
+/* NEARBY FIXED */
 function findPlace(type){
-  document.getElementById("result").innerHTML = "Finding help...";
 
-  navigator.geolocation.getCurrentPosition(pos => {
+  document.getElementById("result").innerHTML="Finding...";
 
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
+  navigator.geolocation.getCurrentPosition(pos=>{
 
-    const url = `https://api.geoapify.com/v2/places?categories=${type}&filter=circle:${lon},${lat},5000&limit=5&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`;
+    const lat=pos.coords.latitude;
+    const lon=pos.coords.longitude;
 
-    fetch(url)
-    .then(res => res.json())
-    .then(data => {
+    const category={
+      hospital:"healthcare.hospital",
+      police:"service.police",
+      fire_station:"service.fire_station"
+    }[type];
 
-      if(!data.features.length){
-        document.getElementById("result").innerText = "No nearby found ❌";
-        return;
-      }
+    fetch(`https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=10&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`)
+    .then(res=>res.json())
+    .then(data=>{
 
-      let html="";
+      let nearest=null,min=999;
+
       data.features.forEach(f=>{
-        html+=`<div>${f.properties.name || "Unknown"}</div>`;
+        const [lng,lat2]=f.geometry.coordinates;
+        const d=getDistance(lat,lon,lat2,lng);
+        if(d<min){min=d; nearest={...f,lat:lat2,lon:lng,dist:d};}
       });
 
-      document.getElementById("result").innerHTML = html;
+      document.getElementById("result").innerHTML=
+        `${nearest.properties.name}<br>${nearest.dist.toFixed(2)} km<br>
+        <button onclick="navigateTo(${nearest.lat},${nearest.lon})">Navigate</button>`;
+
+      if(currentMarker) map.removeLayer(currentMarker);
+
+      currentMarker=L.marker([nearest.lat,nearest.lon])
+        .addTo(map).bindPopup(nearest.properties.name).openPopup();
+
+      map.setView([nearest.lat,nearest.lon],14);
     });
   });
+}
+
+/* DISTANCE */
+function getDistance(a,b,c,d){
+  const R=6371;
+  const dLat=(c-a)*Math.PI/180;
+  const dLon=(d-b)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+
+    Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*
+    Math.sin(dLon/2)**2;
+  return R*(2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
+}
+
+/* NAVIGATE */
+function navigateTo(lat,lon){
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`);
 }
 
 /* LOGOUT */
 function logout(){
   window.location.href="/logout";
 }
+
 </script>
 
 </body>
