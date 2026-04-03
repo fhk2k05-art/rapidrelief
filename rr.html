@@ -31,32 +31,27 @@ body {
   border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
-/* 🔥 BIG LOGO */
+/* LOGO */
 .logo {
   height:140px;
-  object-fit:contain;
 }
 
-/* 🚪 LOGOUT ICON */
+/* LOGOUT ICON */
 .logout-icon {
   position:absolute;
   right:25px;
   top:25px;
-
   width:30px;
   height:30px;
-
   cursor:pointer;
-  transition:0.25s;
   opacity:0.8;
-
-  filter:invert(1); /* makes dark icon visible */
+  transition:0.25s;
+  filter:invert(1);
 }
 
 .logout-icon:hover {
   transform:scale(1.15);
   opacity:1;
-  filter:invert(1) drop-shadow(0 0 6px rgba(255,255,255,0.7));
 }
 
 /* SECTION */
@@ -76,7 +71,7 @@ body {
 /* CARD */
 .card {
   background:rgba(255,255,255,0.04);
-  padding:30px;
+  padding:25px;
   border-radius:18px;
   text-align:center;
   border:1px solid rgba(255,255,255,0.08);
@@ -90,6 +85,21 @@ body {
 
 .card.active {
   background:linear-gradient(135deg,#0ea5e9,#2563eb);
+}
+
+/* ICON */
+.card-icon {
+  width:60px;
+  height:60px;
+  margin-bottom:10px;
+  object-fit:contain;
+  filter:invert(1);
+}
+
+/* TEXT */
+.card p {
+  margin:0;
+  font-size:16px;
 }
 
 /* BUTTONS */
@@ -147,10 +157,25 @@ button {
 </div>
 
 <div class="grid">
-  <div class="card" onclick="selectType(this,'Medical')">🚑 Medical</div>
-  <div class="card" onclick="selectType(this,'Fire')">🔥 Fire</div>
-  <div class="card" onclick="selectType(this,'Crime')">🚓 Crime</div>
-  <div class="card" onclick="selectType(this,'Mechanical')">🛠 Mechanical</div>
+  <div class="card" onclick="selectType(this,'Medical')">
+    <img src="medical.png" class="card-icon">
+    <p>Medical</p>
+  </div>
+
+  <div class="card" onclick="selectType(this,'Fire')">
+    <img src="fire.png" class="card-icon">
+    <p>Fire</p>
+  </div>
+
+  <div class="card" onclick="selectType(this,'Crime')">
+    <img src="crime.png" class="card-icon">
+    <p>Crime</p>
+  </div>
+
+  <div class="card" onclick="selectType(this,'Mechanical')">
+    <img src="mechanical.png" class="card-icon">
+    <p>Mechanical</p>
+  </div>
 </div>
 
 <div class="btn-group">
@@ -174,7 +199,7 @@ button {
 
 <script>
 
-/* ALL FUNCTIONALITY SAME */
+/* SAME FUNCTIONALITY */
 
 let selectedType="Medical";
 let map;
@@ -196,16 +221,6 @@ function selectType(el,type){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
   selectedType=type;
-
-  const bg={
-    Medical:"https://images.unsplash.com/photo-1586773860418-d37222d8fce3",
-    Fire:"https://images.unsplash.com/photo-1603398938378-e54eab446dde",
-    Crime:"https://images.unsplash.com/photo-1504215680853-026ed2a45def",
-    Mechanical:"https://images.unsplash.com/photo-1515923256482-1c04580b477c"
-  };
-
-  document.body.style.background=
-    `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('${bg[type]}') center/cover`;
 }
 
 function sendSOS(){
