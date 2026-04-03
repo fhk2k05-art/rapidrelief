@@ -23,13 +23,12 @@ body {
   position:relative;
   display:flex;
   justify-content:center;
-  align-items:center;
   padding:20px;
   background:rgba(255,255,255,0.03);
   backdrop-filter:blur(20px);
 }
 
-.logo { height:130px; max-width:80%; }
+.logo { height:130px; }
 
 .logout-icon {
   position:absolute;
@@ -72,7 +71,6 @@ button {
   border:none;
   border-radius:15px;
   color:white;
-  font-size:15px;
 }
 
 .sos { background:red; }
@@ -111,7 +109,6 @@ button {
   border:none;
   border-radius:10px;
   font-size:14px;
-  cursor:pointer;
 }
 
 /* MOBILE */
@@ -184,54 +181,100 @@ navigator.geolocation.getCurrentPosition(pos=>{
   L.marker([userLat,userLon]).addTo(map).bindPopup("You").openPopup();
 });
 
-/* 🚨 SOS */
-function sendSOS(){
-  if(!userLat || !userLon){
-    alert("Location not ready ❌");
-    return;
-  }
-
-  fetch("/sos",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ lat:userLat, lon:userLon })
-  })
-  .then(()=>alert("🚨 SOS Sent"))
-  .catch(()=>alert("Error ❌"));
-}
-
-/* 📍 TRACK */
-function startTracking(){
-  alert("Tracking started 📍");
-
-  navigator.geolocation.watchPosition(pos=>{
-    const lat=pos.coords.latitude;
-    const lon=pos.coords.longitude;
-
-    fetch("/track",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ lat, lon })
-    });
-
-    console.log("Tracking:",lat,lon);
-  });
-}
-
-/* 📞 CALL */
-function callEmergency(){
-  window.location.href="tel:112";
-}
-
-/* CATEGORY */
+/* BACKGROUND CHANGE */
 function selectType(el,type){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
+
+  const bg={
+    Medical:"https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg",
+    Fire:"https://images.pexels.com/photos/266487/pexels-photo-266487.jpeg",
+    Crime:"https://images.pexels.com/photos/7715199/pexels-photo-7715199.jpeg",
+    Mechanical:"https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg"
+  };
+
+  document.body.style.background =
+    `linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.7)),url(${bg[type]}) center/cover`;
+}
+
+/* DISTANCE */
+function getDistance(a,b,c,d){
+  const R=6371;
+  const dLat=(c-a)*Math.PI/180;
+  const dLon=(d-b)*Math.PI/180;
+
+  const x=Math.sin(dLat/2)**2+
+  Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*
+  Math.sin(dLon/2)**2;
+
+  return R*(2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
+}
+
+/* NEARBY */
+function findPlace(type){
+
+  document.getElementById("result").innerHTML="Finding...";
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat=pos.coords.latitude;
+    const lon=pos.coords.longitude;
+
+    const category={
+      hospital:"healthcare.hospital",
+      police:"service.police",
+      fire_station:"service.fire_station"
+    }[type];
+
+    fetch(`https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=5&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`)
+    .then(res=>res.json())
+    .then(data=>{
+      let f=data.features[0];
+      let [lng,lat2]=f.geometry.coordinates;
+      let dist=getDistance(lat,lon,lat2,lng);
+
+      document.getElementById("result").innerHTML=
+        `${f.properties.name}<br>${dist.toFixed(2)} km<br>
+        <button class="nav-go" onclick="navigate(${lat2},${lng})">🧭 Navigate</button>`;
+
+      if(currentMarker) map.removeLayer(currentMarker);
+
+      currentMarker=L.marker([lat2,lng]).addTo(map).bindPopup(f.properties.name).openPopup();
+    });
+  });
 }
 
 /* NAV */
 function navigate(lat,lon){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`);
+}
+
+/* SOS */
+function sendSOS(){
+  fetch("/sos",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ lat:userLat, lon:userLon })
+  })
+  .then(()=>alert("🚨 SOS Sent"));
+}
+
+/* TRACK */
+function startTracking(){
+  navigator.geolocation.watchPosition(pos=>{
+    fetch("/track",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        lat:pos.coords.latitude,
+        lon:pos.coords.longitude
+      })
+    });
+  });
+}
+
+/* CALL */
+function callEmergency(){
+  window.location.href="tel:112";
 }
 
 function logout(){ window.location.href="/logout"; }
