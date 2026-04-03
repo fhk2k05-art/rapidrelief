@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Dashboard</title>
+<title>RapidRelief Admin</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
-body {
+body{
   margin:0;
   font-family:Segoe UI;
   display:flex;
@@ -16,18 +18,18 @@ body {
 }
 
 /* SIDEBAR */
-.sidebar {
-  width:220px;
+.sidebar{
+  width:240px;
   background:#020617;
   height:100vh;
   padding:20px;
 }
 
-.sidebar h2 {
+.sidebar h2{
   text-align:center;
 }
 
-.sidebar button {
+.sidebar button{
   width:100%;
   padding:12px;
   margin:10px 0;
@@ -39,50 +41,69 @@ body {
 }
 
 /* MAIN */
-.main {
+.main{
   flex:1;
   padding:20px;
 }
 
+/* TOP */
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logout{
+  background:red;
+  border:none;
+  padding:10px;
+  border-radius:8px;
+  color:white;
+}
+
 /* CARDS */
-.cards {
+.cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:15px;
+  margin-top:20px;
 }
 
-.card {
+.card{
   background:#1e293b;
   padding:20px;
   border-radius:12px;
   text-align:center;
 }
 
+/* CHART */
+.chart-box{
+  background:#1e293b;
+  padding:20px;
+  border-radius:12px;
+  margin-top:20px;
+}
+
 /* TABLE */
-table {
+table{
   width:100%;
   margin-top:20px;
   border-collapse:collapse;
 }
 
-th, td {
+th,td{
   padding:12px;
   border-bottom:1px solid #334155;
 }
 
-/* TOP BAR */
-.top {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.logout {
-  background:red;
-  padding:10px;
-  border:none;
-  color:white;
-  border-radius:8px;
+/* MOBILE */
+@media(max-width:768px){
+  .cards{
+    grid-template-columns:1fr 1fr;
+  }
+  .sidebar{
+    display:none;
+  }
 }
 
 </style>
@@ -90,6 +111,7 @@ th, td {
 
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
   <h2>Admin</h2>
   <button onclick="loadUsers()">Users</button>
@@ -98,6 +120,7 @@ th, td {
   <button onclick="loadCategory()">Category</button>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
   <div class="top">
@@ -107,29 +130,20 @@ th, td {
 
   <!-- STATS -->
   <div class="cards">
-    <div class="card">
-      <h3 id="userCount">0</h3>
-      <p>Users</p>
-    </div>
-    <div class="card">
-      <h3 id="sosCount">0</h3>
-      <p>SOS Alerts</p>
-    </div>
-    <div class="card">
-      <h3 id="trackCount">0</h3>
-      <p>Tracking Logs</p>
-    </div>
-    <div class="card">
-      <h3 id="catCount">0</h3>
-      <p>Categories</p>
-    </div>
+    <div class="card"><h3 id="u">0</h3><p>Users</p></div>
+    <div class="card"><h3 id="s">0</h3><p>SOS</p></div>
+    <div class="card"><h3 id="t">0</h3><p>Tracking</p></div>
+    <div class="card"><h3 id="c">0</h3><p>Category</p></div>
   </div>
 
-  <!-- DATA -->
+  <!-- CHART -->
+  <div class="chart-box">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- TABLE -->
   <table id="table">
-    <thead>
-      <tr><th>Data</th></tr>
-    </thead>
+    <thead><tr><th>Data</th></tr></thead>
     <tbody></tbody>
   </table>
 
@@ -137,55 +151,70 @@ th, td {
 
 <script>
 
+let chart;
+
+/* UPDATE CHART */
+function updateChart(u,s,t,c){
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chart"), {
+    type:"bar",
+    data:{
+      labels:["Users","SOS","Tracking","Category"],
+      datasets:[{
+        label:"System Data",
+        data:[u,s,t,c],
+      }]
+    }
+  });
+}
+
+/* RENDER */
+function render(data){
+  const tbody=document.querySelector("#table tbody");
+  tbody.innerHTML="";
+
+  data.forEach(d=>{
+    let row=document.createElement("tr");
+    row.innerHTML=`<td>${JSON.stringify(d)}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
 /* LOAD USERS */
 function loadUsers(){
-  fetch("/admin/users")
-  .then(res=>res.json())
-  .then(data=>{
-    document.getElementById("userCount").innerText=data.length;
-    render(data);
+  fetch("/admin/users").then(r=>r.json()).then(d=>{
+    document.getElementById("u").innerText=d.length;
+    render(d);
+    updateChart(d.length,0,0,0);
   });
 }
 
 /* LOAD SOS */
 function loadSOS(){
-  fetch("/admin/sos")
-  .then(res=>res.json())
-  .then(data=>{
-    document.getElementById("sosCount").innerText=data.length;
-    render(data);
+  fetch("/admin/sos").then(r=>r.json()).then(d=>{
+    document.getElementById("s").innerText=d.length;
+    render(d);
+    updateChart(0,d.length,0,0);
   });
 }
 
 /* LOAD TRACK */
 function loadTrack(){
-  fetch("/admin/track")
-  .then(res=>res.json())
-  .then(data=>{
-    document.getElementById("trackCount").innerText=data.length;
-    render(data);
+  fetch("/admin/track").then(r=>r.json()).then(d=>{
+    document.getElementById("t").innerText=d.length;
+    render(d);
+    updateChart(0,0,d.length,0);
   });
 }
 
 /* LOAD CATEGORY */
 function loadCategory(){
-  fetch("/admin/category")
-  .then(res=>res.json())
-  .then(data=>{
-    document.getElementById("catCount").innerText=data.length;
-    render(data);
-  });
-}
-
-/* RENDER TABLE */
-function render(data){
-  const tbody=document.querySelector("#table tbody");
-  tbody.innerHTML="";
-
-  data.forEach(item=>{
-    let row=document.createElement("tr");
-    row.innerHTML=`<td>${JSON.stringify(item)}</td>`;
-    tbody.appendChild(row);
+  fetch("/admin/category").then(r=>r.json()).then(d=>{
+    document.getElementById("c").innerText=d.length;
+    render(d);
+    updateChart(0,0,0,d.length);
   });
 }
 
@@ -194,8 +223,20 @@ function logout(){
   window.location="/logout";
 }
 
-/* AUTO LOAD */
-loadUsers();
+/* INITIAL LOAD */
+Promise.all([
+  fetch("/admin/users").then(r=>r.json()),
+  fetch("/admin/sos").then(r=>r.json()),
+  fetch("/admin/track").then(r=>r.json()),
+  fetch("/admin/category").then(r=>r.json())
+]).then(([u,s,t,c])=>{
+  document.getElementById("u").innerText=u.length;
+  document.getElementById("s").innerText=s.length;
+  document.getElementById("t").innerText=t.length;
+  document.getElementById("c").innerText=c.length;
+
+  updateChart(u.length,s.length,t.length,c.length);
+});
 
 </script>
 
