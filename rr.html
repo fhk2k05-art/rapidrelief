@@ -24,9 +24,36 @@ nav {
   justify-content:space-between;
   align-items:center;
   padding:18px 30px;
+
   background:rgba(255,255,255,0.03);
   backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(255,255,255,0.08);
+}
+
+/* LOGO */
+.logo {
+  height:40px;
+}
+
+/* LOGOUT BUTTON */
+.logout-btn {
+  width:auto;
+  padding:10px 18px;
+
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  border:none;
+  border-radius:10px;
+
+  color:white;
+  font-weight:500;
+  cursor:pointer;
+
+  transition:0.25s;
+}
+
+.logout-btn:hover {
+  transform:scale(1.05);
+  box-shadow:0 0 15px rgba(239,68,68,0.6);
 }
 
 /* SECTION */
@@ -108,8 +135,8 @@ button {
 <body>
 
 <nav>
-  <h2>🚑 RapidRelief</h2>
-  <button onclick="logout()">Logout</button>
+  <img src="logo.png" class="logo">
+  <button class="logout-btn" onclick="logout()">Logout</button>
 </nav>
 
 <div class="section-title">
@@ -218,18 +245,7 @@ function navigateHelp(){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${userLat},${userLon}`);
 }
 
-/* SMART SOS */
-let lastMove=Date.now();
-
-window.addEventListener("devicemotion",(e)=>{
-  const a=e.accelerationIncludingGravity;
-  if(a && (Math.abs(a.x)>20||Math.abs(a.y)>20||Math.abs(a.z)>20)){
-    sendSOS();
-  }
-  lastMove=Date.now();
-});
-
-/* NEARBY FIXED */
+/* NEARBY */
 function findPlace(type){
 
   document.getElementById("result").innerHTML="Finding...";
