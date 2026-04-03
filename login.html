@@ -87,7 +87,7 @@ video {
 const video = document.getElementById("video");
 let stream;
 
-/* CAMERA */
+/* ✅ CAMERA ONLY ON CLICK */
 function openCamera(){
   navigator.mediaDevices.getUserMedia({ video: true })
   .then(s => {
@@ -98,37 +98,59 @@ function openCamera(){
   .catch(()=>alert("Camera permission denied ❌"));
 }
 
-/* 🔐 LOGIN (FIXED) */
+/* ✅ LOGIN FIXED */
 function login(){
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
+  if(!username || !password){
+    alert("Fill all fields ❌");
+    return;
+  }
+
   fetch("/login", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ email: username, password }) // ✅ FIX
+    body:JSON.stringify({
+      username: username,
+      email: username,   // 🔥 FIX
+      password: password
+    })
   })
   .then(res=>res.json())
   .then(data=>{
     if(data.status==="success"){
       window.location.href="/dashboard";
     } else {
-      alert("Login failed ❌");
+      alert(data.message || "Login failed ❌");
     }
-  });
+  })
+  .catch(()=>alert("Server error ❌"));
 }
 
-/* 📝 REGISTER (FIXED) */
+/* ✅ REGISTER FIXED */
 function register(){
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
+  if(!username || !password){
+    alert("Fill all fields ❌");
+    return;
+  }
+
   fetch("/register", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ email: username, password }) // ✅ FIX
+    body:JSON.stringify({
+      email: username,   // 🔥 FIX
+      password: password
+    })
   })
-  .then(()=>alert("Registered ✅"));
+  .then(res=>res.json())
+  .then(data=>{
+    alert(data.message || "Registered ✅");
+  })
+  .catch(()=>alert("Server error ❌"));
 }
 
 /* 👤 FACE REGISTER */
