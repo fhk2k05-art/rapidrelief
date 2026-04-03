@@ -1,162 +1,179 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Login</title>
+<title>Login - RapidRelief</title>
 
 <style>
-body {
+body{
   margin:0;
-  font-family: Arial;
-  background:url("https://images.unsplash.com/photo-1584433144859-1fc3ab64a957") center/cover;
+  font-family:Segoe UI;
+  background:#020617;
+  color:white;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
 }
 
-.box {
-  background: rgba(0,0,0,0.85);
+.container{
+  background:rgba(255,255,255,0.05);
   padding:30px;
-  border-radius:10px;
+  border-radius:15px;
+  width:300px;
   text-align:center;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:10px 0;
+  border:none;
+  border-radius:8px;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
   color:white;
-  width:320px;
-}
-
-.logo {
-  width:80px;
-  margin-bottom:10px;
-}
-
-input {
-  display:block;
-  margin:10px auto;
-  padding:10px;
-  width:90%;
-  border-radius:5px;
-  border:none;
-}
-
-button {
-  padding:10px;
-  margin:5px;
-  border:none;
-  border-radius:5px;
   cursor:pointer;
 }
 
-.login { background:#00bcd4; color:white; }
-.register { background:#28a745; color:white; }
-.face { background:orange; color:black; }
+/* CAMERA */
+.camera-box{
+  margin-top:15px;
+}
 
-video {
-  margin-top:10px;
+video{
+  width:200px;
   border-radius:10px;
+  margin-top:10px;
+  display:none;
+}
+
+#captureBtn{
+  display:none;
+  margin-top:10px;
+  background:#16a34a;
 }
 </style>
+
 </head>
 
 <body>
 
-<div class="box">
+<div class="container">
 
-  <img src="logo.png" class="logo">
+  <h2>Login</h2>
 
-  <h2>🚑 RapidRelief Login</h2>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
 
-  <input id="username" placeholder="Username">
-  <input id="password" type="password" placeholder="Password">
-
-  <button class="login" onclick="login()">Login</button>
-  <button class="register" onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
 
   <hr>
 
-  <h3>Face Login</h3>
-  <video id="video" width="250" height="200" autoplay muted></video>
-  <br>
+  <h3>Register</h3>
 
-  <button class="face" onclick="faceRegister()">Register Face</button>
-  <button class="face" onclick="faceLogin()">Use Face</button>
+  <input type="email" id="regEmail" placeholder="Email">
+  <input type="password" id="regPassword" placeholder="Password">
+
+  <!-- 📷 CAMERA SECTION -->
+  <div class="camera-box">
+
+    <button type="button" onclick="openCamera()">📷 Open Camera</button>
+
+    <video id="video" autoplay playsinline></video>
+
+    <button id="captureBtn" onclick="captureFace()">Capture Face</button>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+  </div>
+
+  <button onclick="register()">Register</button>
 
 </div>
 
 <script>
-const video = document.getElementById("video");
 
-/* CAMERA */
-navigator.mediaDevices.getUserMedia({ video: true })
-.then(stream => video.srcObject = stream)
-.catch(()=>alert("Camera permission denied ❌"));
+let stream;
+let capturedImage = null;
 
-/* LOGIN */
-function login(){
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+/* OPEN CAMERA ONLY ON CLICK */
+function openCamera(){
+  navigator.mediaDevices.getUserMedia({video:true})
+  .then(s=>{
+    stream = s;
 
-  fetch("/login", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ username, password })
+    const video = document.getElementById("video");
+    video.srcObject = stream;
+
+    video.style.display="block";
+    document.getElementById("captureBtn").style.display="block";
   })
-  .then(res=>res.json())
-  .then(data=>{
-
-    if(data.status==="admin"){
-      window.location.href="/admin";
-    }
-    else if(data.status==="user"){
-      window.location.href="/dashboard";
-    }
-    else{
-      alert("Login failed ❌");
-    }
-
+  .catch(()=>{
+    alert("Camera access denied ❌");
   });
+}
+
+/* CAPTURE FACE */
+function captureFace(){
+  const video=document.getElementById("video");
+  const canvas=document.getElementById("canvas");
+
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+
+  const ctx=canvas.getContext("2d");
+  ctx.drawImage(video,0,0);
+
+  capturedImage=canvas.toDataURL("image/png");
+
+  alert("Face captured ✅");
+
+  /* STOP CAMERA */
+  stream.getTracks().forEach(track=>track.stop());
 }
 
 /* REGISTER */
 function register(){
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  fetch("/register", {
+  fetch("/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ username, password })
+    body:JSON.stringify({
+      email:document.getElementById("regEmail").value,
+      password:document.getElementById("regPassword").value,
+      face:capturedImage
+    })
   })
-  .then(()=>alert("Registered ✅"));
+  .then(res=>res.text())
+  .then(msg=>alert(msg));
 }
 
-/* FACE REGISTER */
-function faceRegister(){
-  localStorage.setItem("faceRegistered","true");
-  alert("Face Registered ✅");
-}
-
-/* FACE LOGIN */
-function faceLogin(){
-  const username = document.getElementById("username").value;
-
-  if(!localStorage.getItem("faceRegistered")){
-    alert("No face registered ❌");
-    return;
-  }
-
-  fetch("/face-login", {
+/* LOGIN */
+function login(){
+  fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ username })
+    body:JSON.stringify({
+      email:document.getElementById("email").value,
+      password:document.getElementById("password").value
+    })
   })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.status==="success"){
-      window.location.href="/dashboard";
+  .then(res=>res.text())
+  .then(msg=>{
+    if(msg==="success"){
+      window.location="rr.html";
     } else {
-      alert("Face login failed ❌");
+      alert("Login failed ❌");
     }
   });
 }
+
 </script>
 
 </body>
