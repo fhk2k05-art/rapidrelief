@@ -4,195 +4,175 @@
 <title>RapidRelief Login</title>
 
 <style>
-
-/* 🔥 DARK PREMIUM BACKGROUND */
 body {
   margin:0;
-  font-family:Segoe UI;
-  background:linear-gradient(rgba(0,0,0,0.85),rgba(0,0,0,0.9)),
-  url("https://images.unsplash.com/photo-1492724441997-5dc865305da7") no-repeat center/cover;
-  height:100vh;
+  font-family: Arial;
+  background:url("https://images.unsplash.com/photo-1584433144859-1fc3ab64a957") center/cover;
   display:flex;
   justify-content:center;
   align-items:center;
+  height:100vh;
 }
 
-/* GLASS CARD */
-.container {
-  background:rgba(0,0,0,0.7);
-  backdrop-filter:blur(15px);
+.box {
+  background: rgba(0,0,0,0.85);
   padding:30px;
-  border-radius:20px;
-  width:320px;
+  border-radius:10px;
   text-align:center;
   color:white;
+  width:320px;
 }
 
-/* LOGO */
-.login-logo{
-  width:220px;
-  margin-bottom:20px;
+.logo {
+  width:80px;
+  margin-bottom:10px;
 }
 
-/* INPUT */
 input {
-  width:100%;
-  padding:12px;
-  margin:10px 0;
+  display:block;
+  margin:10px auto;
+  padding:10px;
+  width:90%;
+  border-radius:5px;
   border:none;
-  border-radius:10px;
 }
 
-/* BUTTON ROW */
-.btn-row {
-  display:flex;
-  gap:10px;
-}
-
-/* BUTTONS */
 button {
-  flex:1;
-  padding:12px;
+  padding:10px;
+  margin:5px;
   border:none;
-  border-radius:10px;
+  border-radius:5px;
   cursor:pointer;
-  color:white;
 }
 
-.login-btn { background:#0ea5e9; }
-.register-btn { background:#16a34a; }
-
-/* FACE */
-.face-box {
-  margin-top:20px;
-}
+.login { background:#00bcd4; color:white; }
+.register { background:#28a745; color:white; }
+.face { background:orange; color:black; }
 
 video {
-  width:100%;
-  border-radius:10px;
-  display:none;
-}
-
-.face-btn {
   margin-top:10px;
-  background:#f59e0b;
-  width:100%;
+  border-radius:10px;
+  display:none; /* 👈 hidden initially */
 }
-
 </style>
-
 </head>
 
 <body>
 
-<div class="container">
+<div class="box">
 
-  <!-- ✅ LOGO -->
-  <img src="logo.png" class="login-logo">
+  <img src="logo.png" class="logo">
 
-  <!-- ✅ IMPORTANT: SAME IDS USED IN JS -->
-  <input id="email" placeholder="Email">
+  <h2>🚑 RapidRelief Login</h2>
+
+  <input id="username" placeholder="Username (optional)">
   <input id="password" type="password" placeholder="Password">
 
-  <div class="btn-row">
-    <button class="login-btn" onclick="login()">Login</button>
-    <button class="register-btn" onclick="register()">Register</button>
-  </div>
+  <button class="login" onclick="login()">Login</button>
+  <button class="register" onclick="register()">Register</button>
 
   <hr>
 
   <h3>Face Login</h3>
+  <video id="video" width="250" height="200" autoplay muted></video>
+  <br>
 
-  <div class="face-box">
-    <video id="video" autoplay playsinline></video>
-    <button class="face-btn" onclick="openCamera()">Use Face</button>
-  </div>
+  <!-- ✅ NEW BUTTON TO OPEN CAMERA -->
+  <button class="face" onclick="openCamera()">Open Camera</button>
+
+  <button class="face" onclick="faceRegister()">Register Face</button>
+  <button class="face" onclick="faceLogin()">Use Face</button>
 
 </div>
 
 <script>
-
+const video = document.getElementById("video");
 let stream;
 
-/* CAMERA */
+/* ✅ CAMERA ONLY ON CLICK */
 function openCamera(){
-  navigator.mediaDevices.getUserMedia({video:true})
-  .then(s=>{
-    stream=s;
-    const video=document.getElementById("video");
-    video.srcObject=stream;
-    video.style.display="block";
+  navigator.mediaDevices.getUserMedia({ video: true })
+  .then(s => {
+    stream = s;
+    video.srcObject = stream;
+    video.style.display = "block"; // show preview
   })
-  .catch(()=>alert("Camera denied ❌"));
+  .catch(()=>alert("Camera permission denied ❌"));
 }
 
-/* ✅ LOGIN FIXED */
+/* 🔐 LOGIN */
 function login(){
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  console.log("LOGIN DATA:", email, password);
-
-  if(!email || !password){
-    alert("Please fill all fields ❌");
-    return;
-  }
-
-  fetch("/login",{
+  fetch("/login", {
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({ email, password })
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ username, password })
   })
   .then(res=>res.json())
   .then(data=>{
-    console.log(data);
-
     if(data.status==="success"){
-      window.location="rr.html";
+      window.location.href="/dashboard";
     } else {
-      alert(data.message || "Login failed ❌");
+      alert("Login failed ❌");
     }
-  })
-  .catch(err=>{
-    console.error(err);
-    alert("Server error ❌");
   });
 }
 
-/* ✅ REGISTER FIXED */
+/* 📝 REGISTER */
 function register(){
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+  fetch("/register", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ username, password })
+  })
+  .then(()=>alert("Registered ✅"));
+}
 
-  console.log("REGISTER DATA:", email, password);
+/* 👤 FACE REGISTER */
+function faceRegister(){
+  if(video.videoWidth > 0){
+    localStorage.setItem("faceRegistered","true");
+    alert("Face Registered ✅");
+  } else {
+    alert("Camera not ready ❌");
+  }
+}
 
-  if(!email || !password){
-    alert("Fill all fields ❌");
+/* 🔓 FACE LOGIN */
+function faceLogin(){
+  const username = document.getElementById("username").value;
+
+  if(!localStorage.getItem("faceRegistered")){
+    alert("No face registered ❌");
     return;
   }
 
-  fetch("/register",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({ email, password })
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    console.log(data);
-    alert(data.message || "Registered");
-  })
-  .catch(err=>{
-    console.error(err);
-    alert("Server error ❌");
-  });
-}
+  if(video.videoWidth > 0){
 
+    fetch("/face-login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ username })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+      if(data.status==="success"){
+        alert("Face matched ✅");
+        window.location.href="/dashboard";
+      } else {
+        alert("Please register first ❌");
+      }
+    });
+
+  } else {
+    alert("Face not detected ❌");
+  }
+}
 </script>
 
 </body>
