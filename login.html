@@ -5,50 +5,35 @@
 
 <style>
 
-/* 🌌 BACKGROUND BASE */
+/* 🌌 BASE */
 body {
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  overflow:hidden;
-
   background:#020617;
+  overflow:hidden;
   height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
 }
 
-/* 🌈 ANIMATED GRADIENT LIGHT */
-body::before {
-  content:"";
+/* ✨ PARTICLES */
+canvas {
   position:absolute;
-  width:600px;
-  height:600px;
+  top:0;
+  left:0;
+  z-index:0;
+}
+
+/* 🟢 MOUSE GLOW */
+.glow {
+  position:absolute;
+  width:300px;
+  height:300px;
   background:radial-gradient(circle, rgba(14,165,233,0.25), transparent 60%);
-  top:-100px;
-  left:-100px;
-  animation:move1 12s infinite alternate ease-in-out;
-}
-
-body::after {
-  content:"";
-  position:absolute;
-  width:500px;
-  height:500px;
-  background:radial-gradient(circle, rgba(99,102,241,0.2), transparent 60%);
-  bottom:-100px;
-  right:-100px;
-  animation:move2 14s infinite alternate ease-in-out;
-}
-
-@keyframes move1 {
-  0% { transform:translate(0,0); }
-  100% { transform:translate(200px,150px); }
-}
-
-@keyframes move2 {
-  0% { transform:translate(0,0); }
-  100% { transform:translate(-200px,-150px); }
+  pointer-events:none;
+  border-radius:50%;
+  transform:translate(-50%, -50%);
 }
 
 /* 💎 GLASS CARD */
@@ -67,6 +52,8 @@ body::after {
   box-shadow:
     0 10px 50px rgba(0,0,0,0.8),
     0 0 80px rgba(14,165,233,0.2);
+
+  transition:transform 0.1s ease;
 }
 
 /* LOGO */
@@ -83,15 +70,8 @@ input {
   border:none;
   border-radius:10px;
   outline:none;
-
   background:rgba(255,255,255,0.08);
   color:white;
-  transition:0.3s;
-}
-
-input:focus {
-  background:rgba(255,255,255,0.12);
-  box-shadow:0 0 10px rgba(14,165,233,0.4);
 }
 
 /* BUTTON ROW */
@@ -100,7 +80,6 @@ input:focus {
   gap:10px;
 }
 
-/* BUTTONS */
 button {
   flex:1;
   padding:12px;
@@ -108,34 +87,21 @@ button {
   border-radius:10px;
   cursor:pointer;
   color:white;
-  font-weight:500;
-  transition:0.25s;
 }
 
-/* BUTTON STYLES */
-.login-btn {
-  background:linear-gradient(135deg,#0ea5e9,#2563eb);
-}
-
-.register-btn {
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-}
+/* BUTTONS */
+.login-btn { background:linear-gradient(135deg,#0ea5e9,#2563eb); }
+.register-btn { background:linear-gradient(135deg,#22c55e,#16a34a); }
 
 button:hover {
-  transform:translateY(-3px) scale(1.02);
-  box-shadow:0 10px 20px rgba(0,0,0,0.5);
+  transform:scale(1.05);
 }
 
 /* FACE */
-.face-box {
-  margin-top:20px;
-}
-
 video {
   width:100%;
   border-radius:12px;
   display:none;
-  margin-top:10px;
 }
 
 .face-btn {
@@ -144,21 +110,15 @@ video {
   width:100%;
 }
 
-/* DIVIDER */
-hr {
-  border:0;
-  height:1px;
-  background:rgba(255,255,255,0.1);
-  margin:20px 0;
-}
-
 </style>
-
 </head>
 
 <body>
 
-<div class="container">
+<canvas id="particles"></canvas>
+<div class="glow" id="glow"></div>
+
+<div class="container" id="card">
 
   <img src="logo.png" class="login-logo">
 
@@ -174,18 +134,71 @@ hr {
 
   <h3>Face Login</h3>
 
-  <div class="face-box">
-    <video id="video" autoplay playsinline></video>
-    <button class="face-btn" onclick="openCamera()">Use Face</button>
-  </div>
+  <video id="video" autoplay playsinline></video>
+  <button class="face-btn" onclick="openCamera()">Use Face</button>
 
 </div>
 
 <script>
 
-let stream;
+/* 🌟 PARTICLES */
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+
+for(let i=0;i<100;i++){
+  particles.push({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height,
+    r:Math.random()*2,
+    dx:(Math.random()-0.5),
+    dy:(Math.random()-0.5)
+  });
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  particles.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle="white";
+    ctx.fill();
+
+    p.x+=p.dx;
+    p.y+=p.dy;
+
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+  });
+
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* 🟢 MOUSE GLOW */
+const glow=document.getElementById("glow");
+document.addEventListener("mousemove",e=>{
+  glow.style.left=e.clientX+"px";
+  glow.style.top=e.clientY+"px";
+});
+
+/* 🧊 3D TILT */
+const card=document.getElementById("card");
+
+document.addEventListener("mousemove",e=>{
+  let x=(window.innerWidth/2 - e.clientX)/25;
+  let y=(window.innerHeight/2 - e.clientY)/25;
+
+  card.style.transform=`rotateY(${x}deg) rotateX(${y}deg)`;
+});
 
 /* CAMERA */
+let stream;
 function openCamera(){
   navigator.mediaDevices.getUserMedia({video:true})
   .then(s=>{
@@ -193,19 +206,13 @@ function openCamera(){
     const video=document.getElementById("video");
     video.srcObject=stream;
     video.style.display="block";
-  })
-  .catch(()=>alert("Camera denied ❌"));
+  });
 }
 
 /* LOGIN */
 function login(){
   const username=document.getElementById("email").value.trim();
   const password=document.getElementById("password").value.trim();
-
-  if(!username || !password){
-    alert("Please fill all fields ❌");
-    return;
-  }
 
   fetch("/login",{
     method:"POST",
@@ -214,15 +221,9 @@ function login(){
   })
   .then(res=>res.json())
   .then(data=>{
-    if(data.status==="user"){
-      window.location="/dashboard";
-    } 
-    else if(data.status==="admin"){
-      window.location="/admin";
-    } 
-    else {
-      alert("Login failed ❌");
-    }
+    if(data.status==="user") window.location="/dashboard";
+    else if(data.status==="admin") window.location="/admin";
+    else alert("Login failed ❌");
   });
 }
 
@@ -231,24 +232,12 @@ function register(){
   const username=document.getElementById("email").value.trim();
   const password=document.getElementById("password").value.trim();
 
-  if(!username || !password){
-    alert("Fill all fields ❌");
-    return;
-  }
-
   fetch("/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({ username, password })
   })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.status==="registered"){
-      alert("Registered ✅");
-    } else if(data.status==="exists"){
-      alert("User already exists ❌");
-    }
-  });
+  .then(()=>alert("Registered ✅"));
 }
 
 </script>
