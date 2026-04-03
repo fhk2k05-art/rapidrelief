@@ -7,56 +7,33 @@
 
 <style>
 
-/* 🌌 BASE BACKGROUND */
 body {
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:white;
-
-  background:linear-gradient(#020617,#020617);
-  transition: background 0.6s ease;
+  background:#020617;
+  transition:0.5s;
 }
 
-/* 🔥 NAVBAR */
+/* NAV */
 .navbar {
   position:relative;
   display:flex;
   justify-content:center;
-  align-items:center;
-  padding:20px 0;
-
+  padding:20px;
   background:rgba(255,255,255,0.03);
   backdrop-filter:blur(20px);
-  border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
-/* LOGO */
-.logo {
-  height:140px;
-}
+.logo { height:130px; }
 
-/* LOGOUT ICON */
 .logout-icon {
   position:absolute;
-  right:25px;
-  top:25px;
-  width:30px;
-  height:30px;
-  cursor:pointer;
-  opacity:0.8;
-  transition:0.25s;
+  right:20px;
+  top:20px;
+  width:28px;
   filter:invert(1);
-}
-
-.logout-icon:hover {
-  transform:scale(1.15);
-  opacity:1;
-}
-
-/* SECTION */
-.section-title {
-  padding:30px;
-  opacity:0.8;
+  cursor:pointer;
 }
 
 /* GRID */
@@ -64,42 +41,26 @@ body {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:20px;
-  padding:0 30px;
+  padding:30px;
 }
 
-/* CARD */
 .card {
   background:rgba(255,255,255,0.05);
   padding:25px;
   border-radius:18px;
   text-align:center;
-  border:1px solid rgba(255,255,255,0.08);
-  transition:0.25s;
-}
-
-.card:hover {
-  transform:translateY(-6px);
-  background:rgba(255,255,255,0.1);
+  cursor:pointer;
 }
 
 .card.active {
-  background:linear-gradient(135deg,#0ea5e9,#2563eb);
+  background:linear-gradient(#0ea5e9,#2563eb);
 }
 
-/* ICON */
-.card-icon {
-  width:60px;
-  height:60px;
-  margin-bottom:10px;
-  object-fit:contain;
-  filter:invert(1);
-}
+/* ICONS */
+.card-icon { width:60px; filter:invert(1); }
 
 /* BUTTONS */
-.btn-group {
-  padding:20px 30px;
-}
-
+.btn-group { padding:20px 30px; }
 button {
   width:100%;
   padding:15px;
@@ -107,10 +68,9 @@ button {
   border:none;
   border-radius:15px;
   color:white;
-  cursor:pointer;
 }
 
-.sos { background:#dc2626; }
+.sos { background:red; }
 .track { background:#1e293b; }
 .call { background:#ea580c; }
 .navbtn { background:#16a34a; }
@@ -118,21 +78,28 @@ button {
 /* MAP */
 #map {
   height:300px;
-  margin:20px 30px;
-  border-radius:18px;
+  margin:20px;
+  border-radius:15px;
 }
 
 /* NEARBY */
 .nearby {
-  padding:20px 30px;
+  padding:20px;
 }
 
-.nearby button {
-  width:auto;
-  padding:10px;
-  margin:5px;
-  border-radius:10px;
-  background:#1e293b;
+.nearby-icons {
+  display:flex;
+  gap:15px;
+}
+
+.nearby-icons img {
+  width:45px;
+  cursor:pointer;
+  filter:invert(1);
+}
+
+#result {
+  margin-top:15px;
 }
 
 </style>
@@ -145,46 +112,38 @@ button {
   <img src="logout.png" class="logout-icon" onclick="logout()">
 </nav>
 
-<div class="section-title">
-  <h3>Select Emergency</h3>
-</div>
-
 <div class="grid">
   <div class="card" onclick="selectType(this,'Medical')">
-    <img src="medical.png" class="card-icon">
-    <p>Medical</p>
+    <img src="medical.png" class="card-icon"><p>Medical</p>
   </div>
-
   <div class="card" onclick="selectType(this,'Fire')">
-    <img src="fire.png" class="card-icon">
-    <p>Fire</p>
+    <img src="fire.png" class="card-icon"><p>Fire</p>
   </div>
-
   <div class="card" onclick="selectType(this,'Crime')">
-    <img src="crime.png" class="card-icon">
-    <p>Crime</p>
+    <img src="crime.png" class="card-icon"><p>Crime</p>
   </div>
-
   <div class="card" onclick="selectType(this,'Mechanical')">
-    <img src="mechanical.png" class="card-icon">
-    <p>Mechanical</p>
+    <img src="mechanical.png" class="card-icon"><p>Mechanical</p>
   </div>
 </div>
 
 <div class="btn-group">
-  <button class="sos" onclick="sendSOS()">🚨 SEND SOS</button>
-  <button class="track" onclick="startTracking()">📍 Start Tracking</button>
-  <button class="call" onclick="callEmergency()">📞 Call Emergency</button>
-  <button class="navbtn" onclick="navigateHelp()">🧭 Navigate Help</button>
+  <button class="sos" onclick="sendSOS()">🚨 SOS</button>
+  <button class="track" onclick="startTracking()">📍 Track</button>
+  <button class="call" onclick="callEmergency()">📞 Call</button>
 </div>
 
 <div id="map"></div>
 
 <div class="nearby">
-  <h3>📍 Nearby Help</h3>
-  <button onclick="findPlace('hospital')">🚑 Hospital</button>
-  <button onclick="findPlace('police')">🚓 Police</button>
-  <button onclick="findPlace('fire_station')">🔥 Fire</button>
+  <h3>Nearby Help</h3>
+
+  <div class="nearby-icons">
+    <img src="hospital.png" onclick="findPlace('hospital')">
+    <img src="police.png" onclick="findPlace('police')">
+    <img src="fires.png" onclick="findPlace('fire_station')">
+  </div>
+
   <div id="result"></div>
 </div>
 
@@ -192,61 +151,90 @@ button {
 
 <script>
 
-let selectedType="Medical";
-let map;
-let userLat,userLon;
-let currentMarker;
+let map, userLat, userLon, currentMarker;
 
-/* MAP */
 navigator.geolocation.getCurrentPosition(pos=>{
   userLat=pos.coords.latitude;
   userLon=pos.coords.longitude;
 
   map=L.map('map').setView([userLat,userLon],14);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-  L.marker([userLat,userLon]).addTo(map)
-    .bindPopup("You are here").openPopup();
+  L.marker([userLat,userLon]).addTo(map).bindPopup("You").openPopup();
 });
 
-/* 🔥 FIXED BACKGROUND SYSTEM */
+/* BACKGROUND */
 function selectType(el,type){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
 
-  selectedType = type;
-
-  const bg = {
-    Medical: "https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg",
-    Fire: "https://images.pexels.com/photos/266487/pexels-photo-266487.jpeg",
-    Crime: "https://images.pexels.com/photos/7715199/pexels-photo-7715199.jpeg",
-    Mechanical: "https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg"
+  const bg={
+    Medical:"https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg",
+    Fire:"https://images.pexels.com/photos/266487/pexels-photo-266487.jpeg",
+    Crime:"https://images.pexels.com/photos/7715199/pexels-photo-7715199.jpeg",
+    Mechanical:"https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg"
   };
 
-  document.body.style.background =
-    `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('${bg[type]}') center/cover no-repeat`;
+  document.body.style.background=
+    `linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.7)),url(${bg[type]}) center/cover`;
 }
 
-/* REST SAME */
-function sendSOS(){
-  fetch("/sos",{method:"POST",headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({lat:userLat,lon:userLon,type:selectedType})});
-  alert("🚨 SOS SENT");
+/* DISTANCE */
+function getDistance(lat1,lon1,lat2,lon2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+
+  const a=Math.sin(dLat/2)**2+
+  Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+  Math.sin(dLon/2)**2;
+
+  return R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
 }
 
-function startTracking(){
-  setInterval(()=>{
-    navigator.geolocation.getCurrentPosition(pos=>{
-      fetch("/track",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({lat:pos.coords.latitude,lon:pos.coords.longitude,time:new Date().toLocaleString()})});
+/* NEARBY FIX */
+function findPlace(type){
+
+  document.getElementById("result").innerHTML="Finding...";
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat=pos.coords.latitude;
+    const lon=pos.coords.longitude;
+
+    const category={
+      hospital:"healthcare.hospital",
+      police:"service.police",
+      fire_station:"service.fire_station"
+    }[type];
+
+    fetch(`https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=5&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`)
+    .then(res=>res.json())
+    .then(data=>{
+
+      if(!data.features.length){
+        document.getElementById("result").innerText="No nearby found";
+        return;
+      }
+
+      let f=data.features[0];
+      let [lng,lat2]=f.geometry.coordinates;
+      let dist=getDistance(lat,lon,lat2,lng);
+
+      document.getElementById("result").innerHTML=
+        `${f.properties.name}<br>${dist.toFixed(2)} km<br>
+        <button onclick="navigate(${lat2},${lng})">Navigate</button>`;
+
+      if(currentMarker) map.removeLayer(currentMarker);
+
+      currentMarker=L.marker([lat2,lng]).addTo(map).bindPopup(f.properties.name).openPopup();
     });
-  },5000);
+  });
 }
 
-function callEmergency(){ window.location.href="tel:112"; }
-
-function navigateHelp(){
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${userLat},${userLon}`);
+/* NAVIGATION */
+function navigate(lat,lon){
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`);
 }
 
 function logout(){ window.location.href="/logout"; }
