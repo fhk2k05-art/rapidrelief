@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Admin</title>
+<title>RapidRelief Control System</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -59,6 +59,15 @@ body{
   text-align:center;
 }
 
+/* CHART */
+.chart-box{
+  background:#1e293b;
+  padding:20px;
+  border-radius:12px;
+  margin-top:20px;
+  text-align:center;
+}
+
 /* TABLE */
 table{
   width:100%;
@@ -70,6 +79,11 @@ th,td{
   padding:12px;
   border-bottom:1px solid #334155;
   text-align:center;
+}
+
+/* ALERT HIGHLIGHT */
+.alert{
+  background:#7f1d1d;
 }
 
 /* BUTTON */
@@ -96,7 +110,7 @@ th,td{
 <body>
 
 <div class="sidebar">
-  <h2>⚡ Admin</h2>
+  <h2>🚨 Control</h2>
   <button onclick="loadUsers()">Users</button>
   <button onclick="loadSOS()">SOS</button>
   <button onclick="loadTrack()">Tracking</button>
@@ -106,10 +120,11 @@ th,td{
 <div class="main">
 
   <div style="display:flex;justify-content:space-between;">
-    <h1>🚀 Control Panel</h1>
+    <h1>🧠 Live Control Panel</h1>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
+  <!-- STATS -->
   <div class="cards">
     <div class="card"><h3 id="u">0</h3><p>Users</p></div>
     <div class="card"><h3 id="s">0</h3><p>SOS</p></div>
@@ -117,15 +132,20 @@ th,td{
     <div class="card"><h3 id="c">0</h3><p>Category</p></div>
   </div>
 
+  <!-- DONUT CHART -->
+  <div class="chart-box">
+    <canvas id="chart"></canvas>
+  </div>
+
   <!-- TABLE -->
   <table id="table">
     <thead>
       <tr>
         <th>User</th>
-        <th>Latitude</th>
-        <th>Longitude</th>
+        <th>Lat</th>
+        <th>Lon</th>
         <th>Time</th>
-        <th>Navigate</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -135,25 +155,52 @@ th,td{
 
 <script>
 
-/* NAVIGATION */
+let chart;
+
+/* 🌐 MAP NAV */
 function openMap(lat,lon){
   window.open(`https://www.google.com/maps?q=${lat},${lon}`);
 }
 
-/* RENDER TABLE */
+/* 📊 CHART */
+function updateChart(u,s,t,c){
+  if(chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chart"), {
+    type:"doughnut",
+    data:{
+      labels:["Users","SOS","Tracking","Category"],
+      datasets:[{
+        data:[u,s,t,c],
+        backgroundColor:[
+          "#38bdf8","#ef4444","#22c55e","#f59e0b"
+        ]
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{ labels:{ color:"white" } }
+      }
+    }
+  });
+}
+
+/* 📋 TABLE */
 function render(data){
 
   const tbody=document.querySelector("#table tbody");
   tbody.innerHTML="";
 
-  data.forEach(d=>{
+  data.slice().reverse().forEach((d,i)=>{
 
-    let lat = d.lat || "-";
-    let lon = d.lon || "-";
-    let user = d.user || d.username || "Unknown";
-    let time = d.time || "-";
+    let lat=d.lat||"-";
+    let lon=d.lon||"-";
+    let user=d.user||"Unknown";
+    let time=d.time||"-";
 
     let row=document.createElement("tr");
+
+    if(i===0) row.classList.add("alert"); // highlight latest
 
     row.innerHTML=`
       <td>${user}</td>
@@ -161,7 +208,7 @@ function render(data){
       <td>${lon}</td>
       <td>${time}</td>
       <td>
-        ${lat !== "-" ? `<button class="nav-btn" onclick="openMap(${lat},${lon})">📍 Go</button>` : "-"}
+        ${lat!=="-"?`<button class="nav-btn" onclick="openMap(${lat},${lon})">📍 Go</button>`:"-"}
       </td>
     `;
 
@@ -169,45 +216,43 @@ function render(data){
   });
 }
 
-/* LOAD USERS */
-function loadUsers(){
-  fetch("/admin/users").then(r=>r.json()).then(d=>{
-    document.getElementById("u").innerText=d.length;
-    render(d);
+/* 🔄 LIVE REFRESH */
+function refreshAll(){
+
+  Promise.all([
+    fetch("/admin/users").then(r=>r.json()),
+    fetch("/admin/sos").then(r=>r.json()),
+    fetch("/admin/track").then(r=>r.json()),
+    fetch("/admin/category").then(r=>r.json())
+  ])
+  .then(([u,s,t,c])=>{
+
+    document.getElementById("u").innerText=u.length;
+    document.getElementById("s").innerText=s.length;
+    document.getElementById("t").innerText=t.length;
+    document.getElementById("c").innerText=c.length;
+
+    updateChart(u.length,s.length,t.length,c.length);
+
+    // show latest important data
+    render([...s,...t]);
   });
 }
 
-/* LOAD SOS */
-function loadSOS(){
-  fetch("/admin/sos").then(r=>r.json()).then(d=>{
-    document.getElementById("s").innerText=d.length;
-    render(d);
-  });
-}
+/* BUTTON LOADS */
+function loadUsers(){ fetch("/admin/users").then(r=>r.json()).then(render); }
+function loadSOS(){ fetch("/admin/sos").then(r=>r.json()).then(render); }
+function loadTrack(){ fetch("/admin/track").then(r=>r.json()).then(render); }
+function loadCategory(){ fetch("/admin/category").then(r=>r.json()).then(render); }
 
-/* LOAD TRACK */
-function loadTrack(){
-  fetch("/admin/track").then(r=>r.json()).then(d=>{
-    document.getElementById("t").innerText=d.length;
-    render(d);
-  });
-}
-
-/* LOAD CATEGORY */
-function loadCategory(){
-  fetch("/admin/category").then(r=>r.json()).then(d=>{
-    document.getElementById("c").innerText=d.length;
-    render(d);
-  });
-}
+/* AUTO LIVE */
+setInterval(refreshAll, 5000); // every 5 sec
+refreshAll();
 
 /* LOGOUT */
 function logout(){
   window.location="/logout";
 }
-
-/* INITIAL LOAD */
-loadUsers();
 
 </script>
 
