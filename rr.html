@@ -75,7 +75,6 @@ body {
   text-align:center;
   border:1px solid rgba(255,255,255,0.08);
   transition:0.25s;
-  backdrop-filter:blur(10px);
 }
 
 .card:hover {
@@ -210,22 +209,22 @@ navigator.geolocation.getCurrentPosition(pos=>{
     .bindPopup("You are here").openPopup();
 });
 
-/* 🎨 CATEGORY BACKGROUND (AESTHETIC) */
+/* 🔥 FIXED BACKGROUND SYSTEM */
 function selectType(el,type){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
 
-  selectedType=type;
+  selectedType = type;
 
-  const bg={
-    Medical:"https://images.unsplash.com/photo-1576765607924-3c5b1e9a5c3d",
-    Fire:"https://images.unsplash.com/photo-1501706362039-c6b2a5f74b16",
-    Crime:"https://images.unsplash.com/photo-1540575467063-178a50c2df87",
-    Mechanical:"https://images.unsplash.com/photo-1503376780353-7e6692767b70"
+  const bg = {
+    Medical: "https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg",
+    Fire: "https://images.pexels.com/photos/266487/pexels-photo-266487.jpeg",
+    Crime: "https://images.pexels.com/photos/7715199/pexels-photo-7715199.jpeg",
+    Mechanical: "https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg"
   };
 
   document.body.style.background =
-    `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('${bg[type]}') center/cover fixed`;
+    `linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('${bg[type]}') center/cover no-repeat`;
 }
 
 /* REST SAME */
