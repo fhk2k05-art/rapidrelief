@@ -1,90 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Dashboard</title>
+<title>Admin Panel</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="/socket.io/socket.io.js"></script>
 
 <style>
 
-body {
+body{
   margin:0;
   font-family:'Segoe UI',sans-serif;
+  background:#0f172a;
   color:white;
-
-  background:
-  linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-  url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
-
-  background-size:cover;
-}
-
-/* NAV */
-nav {
   display:flex;
-  justify-content:space-between;
-  padding:15px;
-  background:rgba(0,0,0,0.6);
 }
 
-/* GRID */
-.grid {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
+/* SIDEBAR */
+.sidebar{
+  width:220px;
+  background:#020617;
+  height:100vh;
   padding:20px;
 }
 
-.card {
-  background:#222;
-  padding:20px;
-  text-align:center;
-  cursor:pointer;
-  border-radius:10px;
+.sidebar h2{
+  margin-bottom:30px;
 }
 
-.card.active {
-  background:#00c6ff;
-}
-
-/* BUTTONS */
-.sos {
-  margin:20px;
-  padding:15px;
-  width:90%;
-  background:red;
-  border:none;
-  border-radius:20px;
-  font-size:18px;
-}
-
-.track {
-  margin:10px;
+.sidebar button{
+  width:100%;
+  margin:10px 0;
   padding:10px;
-  background:#00c6ff;
+  background:#1e293b;
   border:none;
-  border-radius:10px;
-}
-
-/* MAP */
-#map {
-  height:300px;
-  margin:20px;
-  border-radius:10px;
-}
-
-/* NEARBY */
-.nearby {
-  padding:20px;
-}
-
-.nearby button {
-  margin:5px;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  background:#00c6ff;
   color:white;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:20px;
+}
+
+/* CARDS */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+}
+
+.card{
+  background:#1e293b;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 0 10px rgba(0,0,0,0.5);
+}
+
+/* SOS FEED */
+.feed{
+  margin-top:20px;
+}
+
+.feed div{
+  background:#111827;
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+  border-left:4px solid red;
 }
 
 </style>
@@ -92,217 +76,57 @@ nav {
 
 <body>
 
-<nav>
-  <h2>🚑 RapidRelief</h2>
-  <button onclick="logout()">Logout</button>
-</nav>
+<div class="sidebar">
+  <h2>🚑 Admin</h2>
 
-<h3 style="padding-left:20px;">Select Emergency</h3>
+  <button onclick="loadData()">Dashboard</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="main">
+
+<h1>📊 Control Panel</h1>
 
 <div class="grid">
-  <div class="card" onclick="selectType(this,'Medical')">🚑 Medical</div>
-  <div class="card" onclick="selectType(this,'Fire')">🔥 Fire</div>
-  <div class="card" onclick="selectType(this,'Crime')">🚓 Crime</div>
-  <div class="card" onclick="selectType(this,'Mechanical')">🛠 Mechanical</div>
+  <div class="card">👤 Users: <span id="users">0</span></div>
+  <div class="card">🚨 SOS: <span id="sos">0</span></div>
+  <div class="card">📍 Active: <span id="active">0</span></div>
 </div>
 
-<button class="sos" onclick="sendSOS()">🚨 SEND SOS</button>
+<div class="feed" id="feed"></div>
 
-<button class="track" onclick="startTracking()">📍 Start Tracking</button>
-
-<div id="map"></div>
-
-<!-- 🔥 NEARBY -->
-<div class="nearby">
-  <h3>📍 Nearby Help</h3>
-
-  <button onclick="findPlace('hospital')">🚑 Hospital</button>
-  <button onclick="findPlace('police')">🚓 Police</button>
-  <button onclick="findPlace('fire_station')">🔥 Fire</button>
-
-  <div id="result"></div>
 </div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-let selectedType = "Medical";
-let map;
-let markers=[];
+const socket = io();
 
-/* MAP */
-navigator.geolocation.getCurrentPosition(pos=>{
-  map = L.map('map').setView([pos.coords.latitude,pos.coords.longitude],14);
+/* LOAD DATA */
+function loadData(){
+  fetch("/admin/data")
+  .then(res=>res.json())
+  .then(data=>{
+    document.getElementById("users").innerText=data.users.length;
+    document.getElementById("sos").innerText=data.sos.length;
+  });
+}
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    .addTo(map);
-
-  L.marker([pos.coords.latitude,pos.coords.longitude])
-    .addTo(map)
-    .bindPopup("You are here")
-    .openPopup();
+/* REALTIME SOS */
+socket.on("sos",data=>{
+  const div=document.createElement("div");
+  div.innerHTML=`
+    <b>${data.user}</b><br>
+    ${data.lat}, ${data.lon}
+  `;
+  document.getElementById("feed").prepend(div);
 });
-
-/* CATEGORY */
-function selectType(el,type){
-
-  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
-  el.classList.add("active");
-
-  selectedType = type;
-
-  let bg={
-    Medical:"https://images.unsplash.com/photo-1586773860418-d37222d8fce3",
-    Fire:"https://images.unsplash.com/photo-1603398938378-e54eab446dde",
-    Crime:"https://images.unsplash.com/photo-1504215680853-026ed2a45def",
-    Mechanical:"https://images.unsplash.com/photo-1515923256482-1c04580b477c"
-  }[type];
-
-  document.body.style.background =
-    `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${bg}')`;
-
-  navigator.geolocation.getCurrentPosition(pos=>{
-    fetch("/category",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        type,
-        lat:pos.coords.latitude,
-        lon:pos.coords.longitude
-      })
-    });
-  });
-}
-
-/* SOS */
-function sendSOS(){
-
-  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
-
-  navigator.geolocation.getCurrentPosition(pos=>{
-    fetch("/sos",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        lat:pos.coords.latitude,
-        lon:pos.coords.longitude,
-        type:selectedType
-      })
-    });
-  });
-
-  alert("🚨 SOS SENT");
-}
-
-/* TRACK */
-function startTracking(){
-
-  setInterval(()=>{
-    navigator.geolocation.getCurrentPosition(pos=>{
-      fetch("/track",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          lat:pos.coords.latitude,
-          lon:pos.coords.longitude,
-          time:new Date().toLocaleString()
-        })
-      });
-    });
-  },5000);
-
-  alert("📍 Tracking started");
-}
-
-/* 🧠 SMART NEARBY + NAVIGATION */
-function findPlace(type){
-
-  document.getElementById("result").innerHTML = "Finding best help... 🧠";
-
-  navigator.geolocation.getCurrentPosition(pos => {
-
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-
-    let category = {
-      hospital: "healthcare.hospital",
-      police: "service.police",
-      fire_station: "service.fire_station"
-    }[type];
-
-    const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lon},${lat},5000&limit=10&apiKey=4d6c3c60dceb40bd9f2fe3db72b87b5b`;
-
-    fetch(url)
-    .then(res => res.json())
-    .then(data => {
-
-      if(!data.features || data.features.length === 0){
-        document.getElementById("result").innerText = "No nearby found ❌";
-        return;
-      }
-
-      markers.forEach(m => map.removeLayer(m));
-      markers=[];
-
-      let nearest=null;
-      let minDist=Infinity;
-
-      data.features.forEach(f=>{
-        const coords=f.geometry.coordinates;
-        const name=f.properties.name || "Unknown";
-
-        const dist=distance(lat,lon,coords[1],coords[0]);
-
-        if(dist < minDist){
-          minDist=dist;
-          nearest={name,lat:coords[1],lon:coords[0],dist};
-        }
-      });
-
-      let marker=L.marker([nearest.lat,nearest.lon])
-        .addTo(map)
-        .bindPopup(nearest.name)
-        .openPopup();
-
-      markers.push(marker);
-
-      map.setView([nearest.lat,nearest.lon],15);
-
-      const navLink = `https://www.google.com/maps/dir/?api=1&destination=${nearest.lat},${nearest.lon}`;
-
-      document.getElementById("result").innerHTML = `
-        ⭐ Nearest ${type}<br>
-        <b>${nearest.name}</b><br>
-        Distance: ${nearest.dist.toFixed(2)} km<br><br>
-
-        <button onclick="window.open('${navLink}','_blank')" 
-        style="padding:10px;background:green;color:white;border:none;border-radius:8px;">
-        🧭 Navigate
-        </button>
-      `;
-    });
-
-  });
-}
-
-/* DISTANCE */
-function distance(lat1, lon1, lat2, lon2){
-  const R=6371;
-  const dLat=(lat2-lat1)*Math.PI/180;
-  const dLon=(lon2-lon1)*Math.PI/180;
-
-  const a=Math.sin(dLat/2)**2 +
-    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-    Math.sin(dLon/2)**2;
-
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
 
 /* LOGOUT */
 function logout(){
-  window.location.href="/logout";
+  window.location="/logout";
 }
+
+loadData();
 
 </script>
 
