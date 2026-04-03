@@ -2,39 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register - RapidRelief</title>
 
 <style>
 body{
   margin:0;
-  font-family: 'Segoe UI', sans-serif;
+  font-family:'Segoe UI';
   height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
 
-  background:
-    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-    url("https://images.unsplash.com/photo-1603398938378-e54eab446dde");
+  background:linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+  url("https://images.unsplash.com/photo-1603398938378-e54eab446dde");
 
   background-size:cover;
-  background-position:center;
 }
 
 .container{
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(12px);
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(12px);
   padding:40px;
   border-radius:15px;
   width:320px;
   text-align:center;
   color:white;
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
-}
-
-h2{
-  margin-bottom:20px;
 }
 
 input{
@@ -43,29 +35,20 @@ input{
   margin:10px 0;
   border-radius:8px;
   border:none;
-  outline:none;
 }
 
 button{
   width:100%;
   padding:12px;
-  margin-top:15px;
   border:none;
   border-radius:8px;
   background:#5b86e5;
-  color:#fff;
-  font-size:16px;
+  color:white;
   cursor:pointer;
-  transition:0.3s;
 }
 
 button:hover{
   background:#36d1dc;
-}
-
-a{
-  color:#ffd;
-  text-decoration:none;
 }
 </style>
 </head>
@@ -75,7 +58,7 @@ a{
 <div class="container">
   <h2>Create Account</h2>
 
-  <input id="email" placeholder="Email">
+  <input id="username" placeholder="Username">
   <input id="password" type="password" placeholder="Password">
 
   <button onclick="register()">Register</button>
@@ -85,23 +68,29 @@ a{
 
 <script>
 function register(){
-  const email = document.getElementById("email").value;
+  const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
-  if(!email || !password){
+  if(!username || !password){
     alert("Please fill all fields");
     return;
   }
 
-  fetch("http://localhost:3000/register",{
+  fetch("/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({email, password})
+    body: JSON.stringify({username, password})
   })
   .then(res=>res.json())
   .then(data=>{
-    alert(data.message);
-    window.location.href="login.html";
+    if(data.status==="registered"){
+      alert("Registered Successfully ✅");
+      window.location.href="login.html";
+    } else if(data.status==="exists"){
+      alert("User already exists ❌");
+    } else {
+      alert("Error ❌");
+    }
   });
 }
 </script>
