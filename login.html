@@ -64,7 +64,7 @@ video {
 
   <h2>🚑 RapidRelief Login</h2>
 
-  <input id="username" placeholder="Username (optional)">
+  <input id="username" placeholder="Username">
   <input id="password" type="password" placeholder="Password">
 
   <button class="login" onclick="login()">Login</button>
@@ -84,12 +84,12 @@ video {
 <script>
 const video = document.getElementById("video");
 
-/* 🎥 CAMERA */
+/* CAMERA */
 navigator.mediaDevices.getUserMedia({ video: true })
 .then(stream => video.srcObject = stream)
 .catch(()=>alert("Camera permission denied ❌"));
 
-/* 🔐 LOGIN */
+/* LOGIN */
 function login(){
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
@@ -101,15 +101,21 @@ function login(){
   })
   .then(res=>res.json())
   .then(data=>{
-    if(data.status==="success"){
+
+    if(data.status==="admin"){
+      window.location.href="/admin";
+    }
+    else if(data.status==="user"){
       window.location.href="/dashboard";
-    } else {
+    }
+    else{
       alert("Login failed ❌");
     }
+
   });
 }
 
-/* 📝 REGISTER */
+/* REGISTER */
 function register(){
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
@@ -122,17 +128,13 @@ function register(){
   .then(()=>alert("Registered ✅"));
 }
 
-/* 👤 FACE REGISTER */
+/* FACE REGISTER */
 function faceRegister(){
-  if(video.videoWidth > 0){
-    localStorage.setItem("faceRegistered","true");
-    alert("Face Registered ✅");
-  } else {
-    alert("Camera not ready ❌");
-  }
+  localStorage.setItem("faceRegistered","true");
+  alert("Face Registered ✅");
 }
 
-/* 🔓 FACE LOGIN (FORCED REDIRECT) */
+/* FACE LOGIN */
 function faceLogin(){
   const username = document.getElementById("username").value;
 
@@ -141,29 +143,19 @@ function faceLogin(){
     return;
   }
 
-  if(video.videoWidth > 0){
-
-    fetch("/face-login", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ username })
-    })
-    .then(res=>res.json())
-    .then(data=>{
-      if(data.status==="success"){
-        alert("Face matched ✅");
-
-        // 🔥 FORCE REDIRECT ALWAYS
-        window.location.href="/dashboard";
-
-      } else {
-        alert("Please register first ❌");
-      }
-    });
-
-  } else {
-    alert("Face not detected ❌");
-  }
+  fetch("/face-login", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ username })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.status==="success"){
+      window.location.href="/dashboard";
+    } else {
+      alert("Face login failed ❌");
+    }
+  });
 }
 </script>
 
