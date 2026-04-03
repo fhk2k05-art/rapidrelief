@@ -6,16 +6,22 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
+
+/* 🌈 ANIMATED BACKGROUND */
 body {
   margin:0;
   font-family:'Segoe UI',sans-serif;
   color:white;
 
-  background:
-  linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-  url("https://images.unsplash.com/photo-1504215680853-026ed2a45def");
+  background:linear-gradient(-45deg,#020617,#0f172a,#020617,#020617);
+  background-size:400% 400%;
+  animation:bgMove 12s ease infinite;
+}
 
-  background-size:cover;
+@keyframes bgMove {
+  0% {background-position:0% 50%;}
+  50% {background-position:100% 50%;}
+  100% {background-position:0% 50%;}
 }
 
 /* NAV */
@@ -23,69 +29,103 @@ nav {
   display:flex;
   justify-content:space-between;
   padding:15px;
-  background:rgba(0,0,0,0.6);
+
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(20px);
+
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+nav h2 {
+  text-shadow:0 0 15px rgba(0,198,255,0.7);
 }
 
 /* GRID */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:10px;
+  gap:12px;
   padding:20px;
 }
 
+/* CARDS */
 .card {
-  background:#222;
+  background:rgba(255,255,255,0.08);
   padding:20px;
   text-align:center;
   cursor:pointer;
-  border-radius:10px;
+  border-radius:15px;
+
+  backdrop-filter:blur(15px);
+  transition:0.3s;
+}
+
+.card:hover {
+  transform:translateY(-5px) scale(1.03);
+  box-shadow:0 10px 25px rgba(0,0,0,0.6);
 }
 
 .card.active {
-  background:#00c6ff;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  box-shadow:0 0 20px rgba(0,198,255,0.6);
 }
 
 /* BUTTONS */
+button {
+  transition:0.3s;
+  color:white;
+}
+
 .sos {
   margin:20px;
-  padding:15px;
+  padding:16px;
   width:90%;
-  background:red;
+  background:linear-gradient(135deg,#ff0000,#ff4d4d);
   border:none;
-  border-radius:20px;
+  border-radius:25px;
   font-size:18px;
+  box-shadow:0 0 20px rgba(255,0,0,0.5);
+}
+
+.sos:hover {
+  transform:scale(1.05);
 }
 
 .track {
   margin:10px;
   padding:10px;
-  background:#00c6ff;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
   border:none;
-  border-radius:10px;
+  border-radius:12px;
 }
 
 .call {
   margin:10px;
   padding:10px;
-  background:orange;
+  background:linear-gradient(135deg,#f97316,#fb923c);
   border:none;
-  border-radius:10px;
+  border-radius:12px;
 }
 
 .navbtn {
   margin:10px;
   padding:10px;
-  background:#22c55e;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
   border:none;
-  border-radius:10px;
+  border-radius:12px;
+}
+
+button:hover {
+  transform:scale(1.05);
+  box-shadow:0 0 15px rgba(255,255,255,0.2);
 }
 
 /* MAP */
 #map {
   height:300px;
   margin:20px;
-  border-radius:10px;
+  border-radius:15px;
+  box-shadow:0 15px 40px rgba(0,0,0,0.7);
 }
 
 /* NEARBY */
@@ -97,10 +137,15 @@ nav {
   margin:5px;
   padding:10px;
   border:none;
-  border-radius:10px;
-  background:#00c6ff;
+  border-radius:12px;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
   color:white;
 }
+
+.nearby button:hover {
+  box-shadow:0 0 15px rgba(0,198,255,0.5);
+}
+
 </style>
 </head>
 
@@ -127,7 +172,6 @@ nav {
 
 <div id="map"></div>
 
-<!-- NEARBY (UNCHANGED FEATURE) -->
 <div class="nearby">
   <h3>📍 Nearby Help</h3>
 
@@ -141,6 +185,7 @@ nav {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+
 let selectedType = "Medical";
 let map;
 let markers=[];
@@ -171,7 +216,6 @@ function selectType(el,type){
 
 /* SOS */
 function sendSOS(){
-
   new Audio("https://www.soundjay.com/button/beep-07.wav").play();
 
   fetch("/sos",{
@@ -189,7 +233,6 @@ function sendSOS(){
 
 /* TRACK */
 function startTracking(){
-
   setInterval(()=>{
     navigator.geolocation.getCurrentPosition(pos=>{
       fetch("/track",{
@@ -207,17 +250,17 @@ function startTracking(){
   alert("📍 Tracking started");
 }
 
-/* 📞 CALL */
+/* CALL */
 function callEmergency(){
   window.location.href = "tel:112";
 }
 
-/* 🧭 NAVIGATION */
+/* NAVIGATION */
 function navigateHelp(){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${userLat},${userLon}`);
 }
 
-/* 🚨 SMART SOS */
+/* SMART SOS */
 let lastMove = Date.now();
 
 window.addEventListener("devicemotion", (event)=>{
@@ -241,7 +284,7 @@ function autoSOS(reason){
   sendSOS();
 }
 
-/* NEARBY (YOUR ORIGINAL FEATURE KEPT) */
+/* NEARBY */
 function findPlace(type){
 
   document.getElementById("result").innerHTML = "Finding help...";
@@ -276,6 +319,7 @@ function findPlace(type){
 function logout(){
   window.location.href="/logout";
 }
+
 </script>
 
 </body>
