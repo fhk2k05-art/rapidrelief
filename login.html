@@ -86,9 +86,9 @@ video {
 
 <div class="container">
 
-  <!-- ✅ LOGO -->
   <img src="logo.png" class="login-logo">
 
+  <!-- INPUTS -->
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
 
@@ -124,13 +124,13 @@ function openCamera(){
   .catch(()=>alert("Camera denied ❌"));
 }
 
-/* LOGIN FIXED */
+/* ✅ LOGIN FIXED */
 function login(){
 
-  const email=document.getElementById("email").value.trim();
+  const username=document.getElementById("email").value.trim(); // mapped
   const password=document.getElementById("password").value.trim();
 
-  if(!email || !password){
+  if(!username || !password){
     alert("Please fill all fields ❌");
     return;
   }
@@ -138,25 +138,31 @@ function login(){
   fetch("/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email,password})
+    body:JSON.stringify({ username, password }) // FIX
   })
   .then(res=>res.json())
   .then(data=>{
-    if(data.status==="success"){
-      window.location="rr.html";
-    } else {
-      alert(data.message || "Login failed ❌");
+    console.log("LOGIN:", data);
+
+    if(data.status==="user"){
+      window.location="/dashboard";
+    } 
+    else if(data.status==="admin"){
+      window.location="/admin";
+    } 
+    else {
+      alert("Login failed ❌");
     }
   });
 }
 
-/* REGISTER FIXED */
+/* ✅ REGISTER FIXED */
 function register(){
 
-  const email=document.getElementById("email").value.trim();
+  const username=document.getElementById("email").value.trim(); // mapped
   const password=document.getElementById("password").value.trim();
 
-  if(!email || !password){
+  if(!username || !password){
     alert("Fill all fields ❌");
     return;
   }
@@ -164,11 +170,19 @@ function register(){
   fetch("/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email,password})
+    body:JSON.stringify({ username, password }) // FIX
   })
   .then(res=>res.json())
   .then(data=>{
-    alert(data.message || "Registered");
+    console.log("REGISTER:", data);
+
+    if(data.status==="registered"){
+      alert("Registered ✅");
+    } else if(data.status==="exists"){
+      alert("User already exists ❌");
+    } else {
+      alert("Error ❌");
+    }
   });
 }
 
