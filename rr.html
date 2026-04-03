@@ -18,36 +18,44 @@ body {
     radial-gradient(circle at 80% 70%, #020617, black);
 }
 
-/* NAV */
+/* 🔥 NAVBAR GRID */
 nav {
-  display:flex;
-  justify-content:space-between;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
   align-items:center;
-  padding:18px 30px;
+  padding:15px 30px;
 
   background:rgba(255,255,255,0.03);
   backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
-/* LOGO */
+/* CENTER LOGO */
+.nav-center {
+  text-align:center;
+}
+
+/* BIG LOGO */
 .logo {
-  height:40px;
+  height:70px;
+  object-fit:contain;
+}
+
+/* RIGHT SIDE */
+.nav-right {
+  display:flex;
+  justify-content:flex-end;
 }
 
 /* LOGOUT BUTTON */
 .logout-btn {
-  width:auto;
   padding:10px 18px;
-
   background:linear-gradient(135deg,#ef4444,#dc2626);
   border:none;
   border-radius:10px;
-
   color:white;
   font-weight:500;
   cursor:pointer;
-
   transition:0.25s;
 }
 
@@ -135,8 +143,15 @@ button {
 <body>
 
 <nav>
-  <img src="logo.png" class="logo">
-  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div></div>
+
+  <div class="nav-center">
+    <img src="logo.png" class="logo">
+  </div>
+
+  <div class="nav-right">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
 </nav>
 
 <div class="section-title">
@@ -171,40 +186,38 @@ button {
 
 <script>
 
-let selectedType = "Medical";
+let selectedType="Medical";
 let map;
-let userLat, userLon;
+let userLat,userLon;
 let currentMarker;
 
 /* MAP */
 navigator.geolocation.getCurrentPosition(pos=>{
-  userLat = pos.coords.latitude;
-  userLon = pos.coords.longitude;
+  userLat=pos.coords.latitude;
+  userLon=pos.coords.longitude;
 
-  map = L.map('map').setView([userLat,userLon],14);
+  map=L.map('map').setView([userLat,userLon],14);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    .addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
   L.marker([userLat,userLon]).addTo(map)
     .bindPopup("You are here").openPopup();
 });
 
-/* CATEGORY + BACKGROUND */
+/* CATEGORY */
 function selectType(el,type){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   el.classList.add("active");
+  selectedType=type;
 
-  selectedType = type;
-
-  const bg = {
+  const bg={
     Medical:"https://images.unsplash.com/photo-1586773860418-d37222d8fce3",
     Fire:"https://images.unsplash.com/photo-1603398938378-e54eab446dde",
     Crime:"https://images.unsplash.com/photo-1504215680853-026ed2a45def",
     Mechanical:"https://images.unsplash.com/photo-1515923256482-1c04580b477c"
   };
 
-  document.body.style.background =
+  document.body.style.background=
     `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('${bg[type]}') center/cover`;
 }
 
@@ -240,7 +253,7 @@ function callEmergency(){
   window.location.href="tel:112";
 }
 
-/* NAV */
+/* NAVIGATION */
 function navigateHelp(){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${userLat},${userLon}`);
 }
