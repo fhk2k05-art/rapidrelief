@@ -1,168 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Admin ULTRA</title>
+<title>Admin Dashboard</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
-/* 🌈 ANIMATED BACKGROUND */
 body {
   margin:0;
-  font-family:'Segoe UI', sans-serif;
+  font-family:Segoe UI;
   display:flex;
+  background:#0f172a;
   color:white;
-
-  background:linear-gradient(-45deg,#020617,#0f172a,#020617,#020617);
-  background-size:400% 400%;
-  animation:bgMove 12s ease infinite;
 }
 
-@keyframes bgMove {
-  0% {background-position:0% 50%;}
-  50% {background-position:100% 50%;}
-  100% {background-position:0% 50%;}
-}
-
-/* 🔥 SIDEBAR */
+/* SIDEBAR */
 .sidebar {
-  width:230px;
+  width:220px;
+  background:#020617;
+  height:100vh;
   padding:20px;
-  background:rgba(255,255,255,0.05);
-  backdrop-filter:blur(25px);
-  border-right:1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar h2 {
+  text-align:center;
 }
 
 .sidebar button {
   width:100%;
-  margin:10px 0;
   padding:12px;
-  background:rgba(255,255,255,0.05);
+  margin:10px 0;
   border:none;
-  border-radius:12px;
+  background:#1e293b;
   color:white;
+  border-radius:8px;
   cursor:pointer;
-  transition:0.3s;
 }
 
-.sidebar button:hover {
-  background:linear-gradient(135deg,#00c6ff,#0072ff);
-  transform:translateX(5px) scale(1.05);
-  box-shadow:0 0 15px rgba(0,198,255,0.6);
-}
-
-/* 🧠 MAIN */
+/* MAIN */
 .main {
   flex:1;
-  padding:25px;
+  padding:20px;
 }
 
-.main h2 {
-  font-weight:600;
-  letter-spacing:1px;
-  text-shadow:0 0 20px rgba(0,198,255,0.8);
+/* CARDS */
+.cards {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
 }
 
-/* 📦 CONTENT */
-.content {
-  display:flex;
-  gap:20px;
-}
-
-/* 📜 LIST */
-.list {
-  width:40%;
-  height:520px;
-  overflow:auto;
-  background:rgba(255,255,255,0.05);
-  backdrop-filter:blur(20px);
-  border-radius:18px;
-  padding:10px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.5);
-}
-
-/* 🗺️ MAP */
-#map {
-  width:60%;
-  height:520px;
-  border-radius:18px;
-  overflow:hidden;
-  box-shadow:0 15px 40px rgba(0,0,0,0.7);
-}
-
-/* 🧾 CARD */
 .card {
-  margin:12px;
-  padding:15px;
-  background:rgba(255,255,255,0.08);
-  border-radius:15px;
-  backdrop-filter:blur(15px);
-  transition:0.3s;
-  position:relative;
+  background:#1e293b;
+  padding:20px;
+  border-radius:12px;
+  text-align:center;
 }
 
-.card:hover {
-  transform:translateY(-6px) scale(1.02);
-  box-shadow:0 10px 30px rgba(0,0,0,0.6);
-}
-
-/* 🚨 SOS PULSE */
-.card::before {
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
+/* TABLE */
+table {
   width:100%;
-  height:3px;
-  background:linear-gradient(90deg,#ff0000,#ff4d4d);
-  animation:pulse 2s infinite;
+  margin-top:20px;
+  border-collapse:collapse;
 }
 
-@keyframes pulse {
-  0% {opacity:0.2;}
-  50% {opacity:1;}
-  100% {opacity:0.2;}
+th, td {
+  padding:12px;
+  border-bottom:1px solid #334155;
 }
 
-/* 🚦 STATUS */
-.status {
-  margin-top:8px;
-  padding:6px 12px;
-  border-radius:10px;
-  font-size:12px;
+/* TOP BAR */
+.top {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
-.pending {
-  background:rgba(255,165,0,0.2);
-  color:orange;
-}
-
-.dispatched {
-  background:rgba(0,150,255,0.2);
-  color:#00c6ff;
-}
-
-.resolved {
-  background:rgba(0,255,150,0.2);
-  color:#22c55e;
-}
-
-/* 🔘 BUTTONS */
-.card button {
-  margin:5px;
-  padding:8px 14px;
+.logout {
+  background:red;
+  padding:10px;
   border:none;
-  border-radius:10px;
-  cursor:pointer;
-  background:linear-gradient(135deg,#00c6ff,#0072ff);
   color:white;
-  transition:0.3s;
-}
-
-.card button:hover {
-  transform:scale(1.1);
-  box-shadow:0 0 20px rgba(0,198,255,0.7);
+  border-radius:8px;
 }
 
 </style>
@@ -171,118 +91,111 @@ body {
 <body>
 
 <div class="sidebar">
-  <button onclick="loadSOS()">🚨 SOS</button>
-  <button onclick="loadTrack()">📍 Live Tracking</button>
-  <button onclick="loadUsers()">👤 Users</button>
+  <h2>Admin</h2>
+  <button onclick="loadUsers()">Users</button>
+  <button onclick="loadSOS()">SOS</button>
+  <button onclick="loadTrack()">Tracking</button>
+  <button onclick="loadCategory()">Category</button>
 </div>
 
 <div class="main">
-  <h2>🚑 Admin Control Center</h2>
 
-  <div class="content">
-    <div class="list" id="list"></div>
-    <div id="map"></div>
+  <div class="top">
+    <h1>Dashboard</h1>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- STATS -->
+  <div class="cards">
+    <div class="card">
+      <h3 id="userCount">0</h3>
+      <p>Users</p>
+    </div>
+    <div class="card">
+      <h3 id="sosCount">0</h3>
+      <p>SOS Alerts</p>
+    </div>
+    <div class="card">
+      <h3 id="trackCount">0</h3>
+      <p>Tracking Logs</p>
+    </div>
+    <div class="card">
+      <h3 id="catCount">0</h3>
+      <p>Categories</p>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <table id="table">
+    <thead>
+      <tr><th>Data</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+</div>
 
 <script>
 
-let map = L.map('map').setView([10.8505,76.2711], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-let markers=[];
-
-/* 🚨 SOS */
-function loadSOS(){
-  fetch("/admin/sos")
-  .then(res=>res.json())
-  .then(data=>{
-
-    markers.forEach(m=>map.removeLayer(m));
-    markers=[];
-
-    let html="";
-
-    data.slice().reverse().forEach((s,index)=>{
-
-      const status = s.status || "pending";
-
-      html+=`
-      <div class="card">
-        🚨 <b>${s.type}</b><br>
-        📍 ${s.lat}, ${s.lon}<br>
-
-        <span class="status ${status}">
-          ${status.toUpperCase()}
-        </span><br><br>
-
-        <button onclick="dispatch(${index})">🚑 Dispatch</button>
-        <button onclick="resolve(${index})">✅ Resolve</button>
-      </div>`;
-
-      let marker = L.marker([s.lat,s.lon]).addTo(map)
-        .bindPopup(`${s.type} - ${status}`);
-      markers.push(marker);
-    });
-
-    document.getElementById("list").innerHTML = html;
-  });
-}
-
-/* 🚑 DISPATCH */
-function dispatch(index){
-  fetch("/admin/update-status",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({index,status:"dispatched"})
-  })
-  .then(()=>loadSOS());
-}
-
-/* ✅ RESOLVE */
-function resolve(index){
-  fetch("/admin/update-status",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({index,status:"resolved"})
-  })
-  .then(()=>loadSOS());
-}
-
-/* 📍 TRACK */
-function loadTrack(){
-  fetch("/admin/track")
-  .then(res=>res.json())
-  .then(data=>{
-    markers.forEach(m=>map.removeLayer(m));
-    markers=[];
-    let html="";
-    data.slice(-20).forEach(t=>{
-      html+=`<div class="card">📍 ${t.lat}, ${t.lon}</div>`;
-      let marker=L.marker([t.lat,t.lon]).addTo(map);
-      markers.push(marker);
-    });
-    document.getElementById("list").innerHTML=html;
-  });
-}
-
-/* 👤 USERS */
+/* LOAD USERS */
 function loadUsers(){
   fetch("/admin/users")
   .then(res=>res.json())
   .then(data=>{
-    let html="";
-    data.forEach(u=>{
-      html+=`<div class="card">👤 ${u.username}</div>`;
-    });
-    document.getElementById("list").innerHTML=html;
+    document.getElementById("userCount").innerText=data.length;
+    render(data);
   });
 }
 
-/* 🔄 AUTO REFRESH */
-setInterval(loadSOS,5000);
+/* LOAD SOS */
+function loadSOS(){
+  fetch("/admin/sos")
+  .then(res=>res.json())
+  .then(data=>{
+    document.getElementById("sosCount").innerText=data.length;
+    render(data);
+  });
+}
+
+/* LOAD TRACK */
+function loadTrack(){
+  fetch("/admin/track")
+  .then(res=>res.json())
+  .then(data=>{
+    document.getElementById("trackCount").innerText=data.length;
+    render(data);
+  });
+}
+
+/* LOAD CATEGORY */
+function loadCategory(){
+  fetch("/admin/category")
+  .then(res=>res.json())
+  .then(data=>{
+    document.getElementById("catCount").innerText=data.length;
+    render(data);
+  });
+}
+
+/* RENDER TABLE */
+function render(data){
+  const tbody=document.querySelector("#table tbody");
+  tbody.innerHTML="";
+
+  data.forEach(item=>{
+    let row=document.createElement("tr");
+    row.innerHTML=`<td>${JSON.stringify(item)}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
+/* LOGOUT */
+function logout(){
+  window.location="/logout";
+}
+
+/* AUTO LOAD */
+loadUsers();
 
 </script>
 
