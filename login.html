@@ -5,11 +5,12 @@
 
 <style>
 
-/* BACKGROUND */
+/* 🔥 DARK PREMIUM BACKGROUND */
 body {
   margin:0;
   font-family:Segoe UI;
-  background:url("https://images.unsplash.com/photo-1519389950473-47ba0277781c") no-repeat center/cover;
+  background:linear-gradient(rgba(0,0,0,0.85),rgba(0,0,0,0.9)),
+  url("https://images.unsplash.com/photo-1498050108023-c5249f4df085") no-repeat center/cover;
   height:100vh;
   display:flex;
   justify-content:center;
@@ -19,7 +20,7 @@ body {
 /* GLASS CARD */
 .container {
   background:rgba(0,0,0,0.7);
-  backdrop-filter:blur(10px);
+  backdrop-filter:blur(15px);
   padding:30px;
   border-radius:20px;
   width:320px;
@@ -29,36 +30,36 @@ body {
 
 /* LOGO */
 .login-logo{
-  width:200px;
+  width:220px;
   margin-bottom:20px;
 }
 
 /* INPUT */
 input {
   width:100%;
-  padding:10px;
+  padding:12px;
   margin:10px 0;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
 }
 
 /* BUTTON ROW */
 .btn-row {
   display:flex;
-  justify-content:space-between;
+  gap:10px;
 }
 
 /* BUTTONS */
 button {
+  flex:1;
+  padding:12px;
   border:none;
-  padding:10px;
-  border-radius:8px;
+  border-radius:10px;
   cursor:pointer;
-  width:48%;
   color:white;
 }
 
-.login-btn { background:#06b6d4; }
+.login-btn { background:#0ea5e9; }
 .register-btn { background:#16a34a; }
 
 /* FACE */
@@ -67,7 +68,7 @@ button {
 }
 
 video {
-  width:200px;
+  width:100%;
   border-radius:10px;
   display:none;
 }
@@ -86,7 +87,6 @@ video {
 
 <div class="container">
 
-  <!-- ✅ LOGO -->
   <img src="logo.png" class="login-logo">
 
   <input id="email" placeholder="Email">
@@ -124,33 +124,46 @@ function openCamera(){
   .catch(()=>alert("Camera denied ❌"));
 }
 
-/* LOGIN FIXED */
+/* 🔥 IMPORTANT FIX */
+const BASE_URL = "https://rapidrelief.onrender.com";
+
+/* LOGIN */
 function login(){
 
   const email=document.getElementById("email").value.trim();
   const password=document.getElementById("password").value.trim();
+
+  console.log("Sending:", email, password); // debug
 
   if(!email || !password){
     alert("Please fill all fields ❌");
     return;
   }
 
-  fetch("/login",{
+  fetch(BASE_URL + "/login",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email,password})
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ email, password })
   })
   .then(res=>res.json())
   .then(data=>{
+    console.log(data);
+
     if(data.status==="success"){
       window.location="rr.html";
     } else {
       alert(data.message || "Login failed ❌");
     }
+  })
+  .catch(err=>{
+    console.error(err);
+    alert("Server error ❌");
   });
 }
 
-/* REGISTER FIXED */
+/* REGISTER */
 function register(){
 
   const email=document.getElementById("email").value.trim();
@@ -161,14 +174,19 @@ function register(){
     return;
   }
 
-  fetch("/register",{
+  fetch(BASE_URL + "/register",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email,password})
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ email, password })
   })
   .then(res=>res.json())
   .then(data=>{
     alert(data.message || "Registered");
+  })
+  .catch(()=>{
+    alert("Server error ❌");
   });
 }
 
