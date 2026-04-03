@@ -6,69 +6,135 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
+
+/* 🌌 BACKGROUND */
 body {
   margin:0;
-  font-family:'Segoe UI';
+  font-family:'Segoe UI', sans-serif;
   display:flex;
-  background:#0f172a;
+  background:linear-gradient(135deg,#0f172a,#020617);
   color:white;
 }
 
+/* 🔥 SIDEBAR */
 .sidebar {
-  width:220px;
-  background:#020617;
+  width:230px;
   padding:20px;
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(20px);
+  border-right:1px solid rgba(255,255,255,0.1);
 }
 
 .sidebar button {
   width:100%;
   margin:10px 0;
-  padding:10px;
-  background:#1e293b;
+  padding:12px;
+  background:rgba(255,255,255,0.05);
+  border:none;
+  border-radius:10px;
   color:white;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.sidebar button:hover {
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  transform:scale(1.05);
+}
+
+/* 🧠 MAIN */
+.main {
+  flex:1;
+  padding:25px;
+}
+
+.main h2 {
+  font-weight:600;
+  letter-spacing:1px;
+  text-shadow: 0 0 10px rgba(0,198,255,0.6);
+}
+
+/* 📦 CONTENT */
+.content {
+  display:flex;
+  gap:20px;
+}
+
+/* 📜 LIST */
+.list {
+  width:40%;
+  height:520px;
+  overflow:auto;
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(20px);
+  border-radius:15px;
+  padding:10px;
+}
+
+/* 🗺️ MAP */
+#map {
+  width:60%;
+  height:520px;
+  border-radius:15px;
+  overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* 🧾 CARD */
+.card {
+  margin:10px;
+  padding:15px;
+  background:rgba(255,255,255,0.08);
+  border-radius:12px;
+  backdrop-filter:blur(10px);
+  transition:0.3s;
+}
+
+.card:hover {
+  transform:translateY(-5px);
+  box-shadow:0 10px 20px rgba(0,0,0,0.5);
+}
+
+/* 🚦 STATUS */
+.status {
+  margin-top:8px;
+  padding:5px 10px;
+  border-radius:8px;
+  font-size:12px;
+}
+
+.pending {
+  background:rgba(255,165,0,0.2);
+  color:orange;
+}
+
+.dispatched {
+  background:rgba(0,150,255,0.2);
+  color:#00c6ff;
+}
+
+.resolved {
+  background:rgba(0,255,150,0.2);
+  color:#22c55e;
+}
+
+/* 🔘 BUTTONS */
+.card button {
+  margin:5px;
+  padding:8px 12px;
   border:none;
   border-radius:8px;
   cursor:pointer;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  color:white;
+  transition:0.3s;
 }
 
-.main {
-  flex:1;
-  padding:20px;
+.card button:hover {
+  transform:scale(1.05);
+  box-shadow:0 5px 15px rgba(0,198,255,0.4);
 }
 
-.content {
-  display:flex;
-}
-
-.list {
-  width:40%;
-  height:500px;
-  overflow:auto;
-}
-
-#map {
-  width:60%;
-  height:500px;
-  border-radius:10px;
-}
-
-.card {
-  margin:10px;
-  padding:10px;
-  background:#1e293b;
-  border-radius:10px;
-}
-
-.status {
-  margin-top:5px;
-  padding:5px;
-  border-radius:5px;
-  display:inline-block;
-}
-
-.pending { background:orange; }
-.dispatched { background:blue; }
-.resolved { background:green; }
 </style>
 </head>
 
@@ -92,14 +158,13 @@ body {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+
 let map = L.map('map').setView([10.8505,76.2711], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let markers=[];
 
-/* =========================
-   SOS WITH STATUS + DISPATCH
-========================= */
+/* 🚨 SOS */
 function loadSOS(){
   fetch("/admin/sos")
   .then(res=>res.json())
@@ -136,9 +201,7 @@ function loadSOS(){
   });
 }
 
-/* =========================
-   DISPATCH
-========================= */
+/* 🚑 DISPATCH */
 function dispatch(index){
   fetch("/admin/update-status",{
     method:"POST",
@@ -151,9 +214,7 @@ function dispatch(index){
   .then(()=>loadSOS());
 }
 
-/* =========================
-   RESOLVE
-========================= */
+/* ✅ RESOLVE */
 function resolve(index){
   fetch("/admin/update-status",{
     method:"POST",
@@ -166,9 +227,7 @@ function resolve(index){
   .then(()=>loadSOS());
 }
 
-/* =========================
-   TRACK
-========================= */
+/* 📍 TRACK */
 function loadTrack(){
 
   fetch("/admin/track")
@@ -181,9 +240,7 @@ function loadTrack(){
     let html="";
 
     data.slice(-20).forEach(t=>{
-
       html+=`<div class="card">📍 ${t.lat}, ${t.lon}</div>`;
-
       let marker = L.marker([t.lat,t.lon]).addTo(map);
       markers.push(marker);
     });
@@ -195,9 +252,7 @@ function loadTrack(){
   });
 }
 
-/* =========================
-   USERS
-========================= */
+/* 👤 USERS */
 function loadUsers(){
   fetch("/admin/users")
   .then(res=>res.json())
@@ -210,9 +265,7 @@ function loadUsers(){
   });
 }
 
-/* =========================
-   AUTO REFRESH SOS
-========================= */
+/* 🔄 AUTO REFRESH */
 setInterval(loadSOS,5000);
 
 </script>
