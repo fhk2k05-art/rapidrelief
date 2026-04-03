@@ -18,39 +18,33 @@ body {
     radial-gradient(circle at 80% 70%, #020617, black);
 }
 
-/* 🔥 NAVBAR GRID */
-nav {
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
+/* 🔥 NAVBAR (FIXED VERSION) */
+.navbar {
+  position:relative;
+  display:flex;
+  justify-content:center;
   align-items:center;
-  padding:12px 30px;
+  padding:20px 0;
 
   background:rgba(255,255,255,0.03);
   backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
-/* CENTER LOGO */
-.nav-center {
-  text-align:center;
-}
-
-/* 🔥 BIGGER LOGO */
+/* 🔥 BIG CENTER LOGO */
 .logo {
-  height:95px;
+  height:140px;
   object-fit:contain;
 }
 
-/* RIGHT SIDE */
-.nav-right {
-  display:flex;
-  justify-content:flex-end;
-}
-
-/* 🔴 SMALL LOGOUT */
+/* 🔴 SMALL TOP-RIGHT LOGOUT */
 .logout-btn {
-  padding:6px 12px;
-  font-size:13px;
+  position:absolute;
+  right:25px;
+  top:25px;
+
+  padding:5px 10px;
+  font-size:12px;
 
   background:linear-gradient(135deg,#ef4444,#dc2626);
   border:none;
@@ -68,7 +62,7 @@ nav {
 
 /* SECTION */
 .section-title {
-  padding:30px 30px 10px;
+  padding:30px;
   opacity:0.8;
 }
 
@@ -144,16 +138,10 @@ button {
 
 <body>
 
-<nav>
-  <div></div>
-
-  <div class="nav-center">
-    <img src="logo.png" class="logo">
-  </div>
-
-  <div class="nav-right">
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
+<!-- ✅ FIXED NAVBAR -->
+<nav class="navbar">
+  <img src="logo.png" class="logo">
+  <button class="logout-btn" onclick="logout()">Logout</button>
 </nav>
 
 <div class="section-title">
@@ -188,7 +176,7 @@ button {
 
 <script>
 
-/* (ALL YOUR EXISTING JS — UNCHANGED) */
+/* ALL YOUR ORIGINAL FUNCTIONALITY (UNCHANGED) */
 
 let selectedType="Medical";
 let map;
