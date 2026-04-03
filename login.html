@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login - RapidRelief</title>
+<title>RapidRelief Login</title>
 
 <style>
 body{
   margin:0;
-  font-family:Segoe UI;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   background:#020617;
   color:white;
   display:flex;
@@ -17,29 +17,39 @@ body{
 
 .container{
   background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(20px);
   padding:30px;
-  border-radius:15px;
-  width:300px;
+  border-radius:20px;
+  width:320px;
   text-align:center;
+}
+
+h2{
+  margin-bottom:20px;
 }
 
 input{
   width:100%;
-  padding:10px;
+  padding:12px;
   margin:10px 0;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
+  outline:none;
 }
 
 button{
   width:100%;
-  padding:10px;
+  padding:12px;
   margin-top:10px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:#2563eb;
   color:white;
   cursor:pointer;
+}
+
+button:hover{
+  opacity:0.9;
 }
 
 /* CAMERA */
@@ -47,9 +57,13 @@ button{
   margin-top:15px;
 }
 
+.camera-btn{
+  background:#16a34a;
+}
+
 video{
-  width:200px;
-  border-radius:10px;
+  width:220px;
+  border-radius:12px;
   margin-top:10px;
   display:none;
 }
@@ -57,10 +71,10 @@ video{
 #captureBtn{
   display:none;
   margin-top:10px;
-  background:#16a34a;
+  background:#ea580c;
 }
-</style>
 
+</style>
 </head>
 
 <body>
@@ -76,15 +90,15 @@ video{
 
   <hr>
 
-  <h3>Register</h3>
+  <h2>Register</h2>
 
   <input type="email" id="regEmail" placeholder="Email">
   <input type="password" id="regPassword" placeholder="Password">
 
-  <!-- 📷 CAMERA SECTION -->
+  <!-- 📷 CAMERA -->
   <div class="camera-box">
 
-    <button type="button" onclick="openCamera()">📷 Open Camera</button>
+    <button class="camera-btn" onclick="openCamera()">📷 Open Camera</button>
 
     <video id="video" autoplay playsinline></video>
 
@@ -103,40 +117,44 @@ video{
 let stream;
 let capturedImage = null;
 
-/* OPEN CAMERA ONLY ON CLICK */
+/* ✅ OPEN CAMERA ONLY ON CLICK */
 function openCamera(){
-  navigator.mediaDevices.getUserMedia({video:true})
-  .then(s=>{
-    stream = s;
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(s => {
+      stream = s;
 
-    const video = document.getElementById("video");
-    video.srcObject = stream;
+      const video = document.getElementById("video");
+      video.srcObject = stream;
 
-    video.style.display="block";
-    document.getElementById("captureBtn").style.display="block";
-  })
-  .catch(()=>{
-    alert("Camera access denied ❌");
-  });
+      video.style.display = "block";
+      document.getElementById("captureBtn").style.display = "block";
+    })
+    .catch(() => {
+      alert("Camera access denied ❌");
+    });
 }
 
-/* CAPTURE FACE */
+/* ✅ CAPTURE FACE */
 function captureFace(){
-  const video=document.getElementById("video");
-  const canvas=document.getElementById("canvas");
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
 
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
-  const ctx=canvas.getContext("2d");
+  const ctx = canvas.getContext("2d");
   ctx.drawImage(video,0,0);
 
-  capturedImage=canvas.toDataURL("image/png");
+  capturedImage = canvas.toDataURL("image/png");
 
   alert("Face captured ✅");
 
   /* STOP CAMERA */
-  stream.getTracks().forEach(track=>track.stop());
+  if(stream){
+    stream.getTracks().forEach(track => track.stop());
+  }
+
+  video.style.display="none";
 }
 
 /* REGISTER */
