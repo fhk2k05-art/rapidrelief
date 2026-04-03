@@ -10,7 +10,7 @@ body {
   margin:0;
   font-family:Segoe UI;
   background:linear-gradient(rgba(0,0,0,0.85),rgba(0,0,0,0.9)),
-  url("https://images.unsplash.com/photo-1498050108023-c5249f4df085") no-repeat center/cover;
+  url("https://images.unsplash.com/photo-1492724441997-5dc865305da7") no-repeat center/cover;
   height:100vh;
   display:flex;
   justify-content:center;
@@ -87,8 +87,10 @@ video {
 
 <div class="container">
 
+  <!-- ✅ LOGO -->
   <img src="logo.png" class="login-logo">
 
+  <!-- ✅ IMPORTANT: SAME IDS USED IN JS -->
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
 
@@ -124,23 +126,20 @@ function openCamera(){
   .catch(()=>alert("Camera denied ❌"));
 }
 
-/* 🔥 IMPORTANT FIX */
-const BASE_URL = "https://rapidrelief.onrender.com";
-
-/* LOGIN */
+/* ✅ LOGIN FIXED */
 function login(){
 
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  console.log("Sending:", email, password); // debug
+  console.log("LOGIN DATA:", email, password);
 
   if(!email || !password){
     alert("Please fill all fields ❌");
     return;
   }
 
-  fetch(BASE_URL + "/login",{
+  fetch("/login",{
     method:"POST",
     headers:{
       "Content-Type":"application/json"
@@ -163,18 +162,20 @@ function login(){
   });
 }
 
-/* REGISTER */
+/* ✅ REGISTER FIXED */
 function register(){
 
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  console.log("REGISTER DATA:", email, password);
 
   if(!email || !password){
     alert("Fill all fields ❌");
     return;
   }
 
-  fetch(BASE_URL + "/register",{
+  fetch("/register",{
     method:"POST",
     headers:{
       "Content-Type":"application/json"
@@ -183,9 +184,11 @@ function register(){
   })
   .then(res=>res.json())
   .then(data=>{
+    console.log(data);
     alert(data.message || "Registered");
   })
-  .catch(()=>{
+  .catch(err=>{
+    console.error(err);
     alert("Server error ❌");
   });
 }
