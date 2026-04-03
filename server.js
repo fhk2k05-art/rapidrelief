@@ -6,31 +6,27 @@ const session = require("express-session");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/* =========================
-   MIDDLEWARE
-========================= */
+/* ========================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: "rapidrelief_secret",
+  secret: "rapid_secret",
   resave: false,
   saveUninitialized: true
 }));
 
 app.use(express.static(__dirname));
 
-/* =========================
-   FILE SETUP
-========================= */
-
-function ensureFile(file){
+/* ========================= */
+/* FILE SYSTEM */
+function ensure(file){
   if(!fs.existsSync(file)){
-    fs.writeFileSync(file, "[]");
+    fs.writeFileSync(file,"[]");
   }
 }
 
-["users.json","sos.json","track.json","category.json"].forEach(ensureFile);
+["users.json","sos.json","track.json","category.json"].forEach(ensure);
 
 function load(file){
   return JSON.parse(fs.readFileSync(file));
@@ -40,30 +36,32 @@ function save(file,data){
   fs.writeFileSync(file, JSON.stringify(data,null,2));
 }
 
-/* =========================
-   ROUTES
-========================= */
+/* ========================= */
+/* ROUTES */
 
-app.get("/", (req,res)=>{
+app.get("/",(req,res)=>{
   res.sendFile(path.join(__dirname,"login.html"));
 });
 
+/* DASHBOARD */
 app.get("/dashboard",(req,res)=>{
-  if(!req.session.user) return res.redirect("/");
+  if(!req.session.user){
+    return res.redirect("/");
+  }
   res.sendFile(path.join(__dirname,"rr.html"));
 });
 
+/* ADMIN */
 app.get("/admin",(req,res)=>{
-  if(req.session.user==="admin"){
+  if(req.session.user === "admin"){
     res.sendFile(path.join(__dirname,"admin.html"));
   } else {
-    res.send("❌ Access Denied");
+    res.redirect("/dashboard");
   }
 });
 
-/* =========================
-   AUTH
-========================= */
+/* ========================= */
+/* AUTH */
 
 /* REGISTER */
 app.post("/register",(req,res)=>{
@@ -72,17 +70,17 @@ app.post("/register",(req,res)=>{
 
   const { username, password, face } = req.body;
 
-  const exists = users.find(u => u.username === username);
-  if(exists) return res.json({status:"exists"});
+  if(users.find(u=>u.username===username)){
+    return res.json({status:"exists"});
+  }
 
-  const user = {
+  users.push({
     username,
     password,
     face: face || null,
-    time:new Date().toLocaleString()
-  };
+    time: new Date().toLocaleString()
+  });
 
-  users.push(user);
   save("users.json",users);
 
   console.log("✅ Registered:", username);
@@ -95,30 +93,19 @@ app.post("/login",(req,res)=>{
 
   let users = load("users.json");
 
-  const { username, password, face } = req.body;
+  const { username, password } = req.body;
 
-  let user = null;
-
-  // normal login
-  if(username && password){
-    user = users.find(u =>
-      u.username === username && u.password === password
-    );
-  }
-
-  // face login
-  if(!user && username && face){
-    user = users.find(u =>
-      u.username === username && u.face
-    );
-  }
+  const user = users.find(u =>
+    u.username === username && u.password === password
+  );
 
   if(user){
+
     req.session.user = user.username;
 
     console.log("✅ Login:", user.username);
 
-    if(user.username==="admin"){
+    if(user.username === "admin"){
       return res.json({status:"admin"});
     } else {
       return res.json({status:"user"});
@@ -130,19 +117,40 @@ app.post("/login",(req,res)=>{
 
 /* LOGOUT */
 app.get("/logout",(req,res)=>{
-  req.session.destroy(()=>res.redirect("/"));
+  req.session.destroy(()=>{
+    res.redirect("/");
+  });
 });
 
-/* =========================
-   CATEGORY
-========================= */
+/* ========================= */
+/* SOS */
+app.post("/sos",(req,res)=>{
+
+  let dataArr = load("sos.json");
+
+  const data = {
+    user:req.session.user || "guest",
+    ...req.body,
+    time:new Date().toLocaleString()
+  };
+
+  dataArr.push(data);
+  save("sos.json",dataArr);
+
+  console.log("🚨 SOS:", data);
+
+  res.json({ok:true});
+});
+
+/* ========================= */
+/* CATEGORY */
 app.post("/category",(req,res)=>{
 
   let dataArr = load("category.json");
 
   const data = {
-    ...req.body,
     user:req.session.user || "guest",
+    ...req.body,
     time:new Date().toLocaleString()
   };
 
@@ -152,37 +160,15 @@ app.post("/category",(req,res)=>{
   res.json({ok:true});
 });
 
-/* =========================
-   SOS
-========================= */
-app.post("/sos",(req,res)=>{
-
-  let dataArr = load("sos.json");
-
-  const data = {
-    ...req.body,
-    user:req.session.user || "guest",
-    time:new Date().toLocaleString()
-  };
-
-  dataArr.push(data);
-  save("sos.json",dataArr);
-
-  console.log("🚨 SOS Sent");
-
-  res.json({ok:true});
-});
-
-/* =========================
-   TRACK
-========================= */
+/* ========================= */
+/* TRACK */
 app.post("/track",(req,res)=>{
 
   let dataArr = load("track.json");
 
   const data = {
-    ...req.body,
     user:req.session.user || "guest",
+    ...req.body,
     time:new Date().toLocaleString()
   };
 
@@ -192,37 +178,18 @@ app.post("/track",(req,res)=>{
   res.json({ok:true});
 });
 
-/* =========================
-   ADMIN SECURITY
-========================= */
-function isAdmin(req,res,next){
-  if(req.session.user==="admin"){
-    next();
-  } else {
-    res.status(403).send("❌ Unauthorized");
-  }
-}
-
-/* ADMIN APIs */
-app.get("/admin/users", isAdmin, (req,res)=>{
-  res.json(load("users.json"));
+/* ========================= */
+/* ADMIN DATA */
+app.get("/admin/data",(req,res)=>{
+  res.json({
+    users:load("users.json"),
+    sos:load("sos.json"),
+    track:load("track.json"),
+    category:load("category.json")
+  });
 });
 
-app.get("/admin/sos", isAdmin, (req,res)=>{
-  res.json(load("sos.json"));
-});
-
-app.get("/admin/track", isAdmin, (req,res)=>{
-  res.json(load("track.json"));
-});
-
-app.get("/admin/category", isAdmin, (req,res)=>{
-  res.json(load("category.json"));
-});
-
-/* =========================
-   START SERVER
-========================= */
+/* ========================= */
 app.listen(PORT,()=>{
   console.log("🚀 Server running on port " + PORT);
 });
