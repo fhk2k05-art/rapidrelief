@@ -70,7 +70,11 @@ app.post("/register",(req,res)=>{
 
   let users = load("users.json");
 
-  const { username, password, face } = req.body;
+  const { username, password } = req.body;
+
+  if(!username || !password){
+    return res.json({status:"error", message:"Missing fields"});
+  }
 
   const exists = users.find(u => u.username === username);
   if(exists) return res.json({status:"exists"});
@@ -78,7 +82,7 @@ app.post("/register",(req,res)=>{
   const user = {
     username,
     password,
-    face: face || null,
+    face: null,
     time:new Date().toLocaleString()
   };
 
@@ -95,23 +99,11 @@ app.post("/login",(req,res)=>{
 
   let users = load("users.json");
 
-  const { username, password, face } = req.body;
+  const { username, password } = req.body;
 
-  let user = null;
-
-  // normal login
-  if(username && password){
-    user = users.find(u =>
-      u.username === username && u.password === password
-    );
-  }
-
-  // face login
-  if(!user && username && face){
-    user = users.find(u =>
-      u.username === username && u.face
-    );
-  }
+  const user = users.find(u =>
+    u.username === username && u.password === password
+  );
 
   if(user){
     req.session.user = user.username;
@@ -123,6 +115,22 @@ app.post("/login",(req,res)=>{
     } else {
       return res.json({status:"user"});
     }
+  }
+
+  res.json({status:"fail"});
+});
+
+/* FACE LOGIN */
+app.post("/face-login",(req,res)=>{
+  const { username } = req.body;
+
+  let users = load("users.json");
+
+  const user = users.find(u => u.username === username && u.face !== null);
+
+  if(user){
+    req.session.user = user.username;
+    return res.json({status:"success"});
   }
 
   res.json({status:"fail"});
@@ -195,6 +203,7 @@ app.post("/track",(req,res)=>{
 /* =========================
    ADMIN SECURITY
 ========================= */
+
 function isAdmin(req,res,next){
   if(req.session.user==="admin"){
     next();
@@ -223,6 +232,7 @@ app.get("/admin/category", isAdmin, (req,res)=>{
 /* =========================
    START SERVER
 ========================= */
-app.listen(PORT,()=>{
-  console.log("🚀 Server running on port " + PORT);
+
+app.listen(PORT, ()=>{
+  console.log("🚀 Server running on http://localhost:"+PORT);
 });
