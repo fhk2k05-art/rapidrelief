@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Control</title>
+<title>RapidRelief // Control Core</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
@@ -13,14 +12,13 @@
 /* ===== GLOBAL ===== */
 body{
   margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-family: "Courier New", monospace;
   background:#020617;
-  color:white;
+  color:#00ff9f;
   display:flex;
-  overflow:hidden;
 }
 
-/* SUBTLE SCANLINE */
+/* subtle scanlines */
 body::before{
   content:"";
   position:fixed;
@@ -28,8 +26,8 @@ body::before{
   height:100%;
   background:repeating-linear-gradient(
     0deg,
-    rgba(255,255,255,0.02),
-    rgba(255,255,255,0.02) 1px,
+    rgba(0,255,159,0.03),
+    rgba(0,255,159,0.03) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -38,32 +36,29 @@ body::before{
 
 /* ===== SIDEBAR ===== */
 .sidebar{
-  width:240px;
+  width:230px;
   padding:20px;
-  background:rgba(255,255,255,0.03);
-  backdrop-filter:blur(20px);
-  border-right:1px solid rgba(255,255,255,0.05);
+  border-right:1px solid #00ff9f;
 }
 
 .sidebar h2{
   text-align:center;
-  color:#38bdf8;
+  text-shadow:0 0 10px #00ff9f;
 }
 
 .sidebar button{
   width:100%;
-  padding:12px;
+  padding:10px;
   margin:10px 0;
-  border:none;
-  border-radius:12px;
-  background:rgba(255,255,255,0.05);
-  color:white;
+  background:transparent;
+  border:1px solid #00ff9f;
+  color:#00ff9f;
   cursor:pointer;
-  transition:0.3s;
 }
 
 .sidebar button:hover{
-  background:#2563eb;
+  background:#00ff9f;
+  color:black;
 }
 
 /* ===== MAIN ===== */
@@ -80,100 +75,75 @@ body::before{
 }
 
 .live{
-  color:#22c55e;
-  font-weight:bold;
-  position:relative;
+  color:#00ff9f;
+  animation:blink 1s infinite;
 }
 
-.live::after{
-  content:"";
-  width:6px;
-  height:6px;
-  background:#22c55e;
-  border-radius:50%;
-  position:absolute;
-  right:-12px;
-  top:6px;
-  animation:pulse 1.5s infinite;
-}
-
-@keyframes pulse{
-  0%{opacity:1;}
+@keyframes blink{
   50%{opacity:0;}
-  100%{opacity:1;}
 }
 
-/* ===== CARDS ===== */
+/* CARDS */
 .cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:15px;
+  gap:10px;
   margin-top:20px;
 }
 
 .card{
-  background:rgba(255,255,255,0.05);
-  padding:20px;
-  border-radius:18px;
-  backdrop-filter:blur(15px);
-  box-shadow:0 8px 25px rgba(0,0,0,0.5);
+  border:1px solid #00ff9f;
+  padding:15px;
   text-align:center;
-  transition:0.3s;
 }
 
-.card:hover{
-  transform:translateY(-3px);
-  box-shadow:0 0 20px rgba(56,189,248,0.3);
-}
-
-/* ===== MAP ===== */
-#adminMap{
+/* MAP */
+#map{
   height:300px;
   margin-top:20px;
-  border-radius:18px;
-  overflow:hidden;
-  box-shadow:0 0 25px rgba(0,0,0,0.6);
+  border:1px solid #00ff9f;
 }
 
-/* ===== TABLE ===== */
+/* TABLE */
 table{
   width:100%;
   margin-top:20px;
-  border-collapse:collapse;
-  background:rgba(255,255,255,0.03);
-  border-radius:12px;
-  overflow:hidden;
 }
 
-th,td{
-  padding:12px;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-  text-align:center;
+td,th{
+  border-bottom:1px solid #00ff9f;
+  padding:8px;
 }
 
 /* ALERT */
 .alert{
-  background:rgba(255,0,0,0.15);
-  box-shadow:inset 0 0 10px rgba(255,0,0,0.5);
+  color:red;
+  animation:blink 0.5s infinite;
+}
+
+/* TERMINAL */
+.terminal{
+  margin-top:15px;
+  border:1px solid #00ff9f;
+  padding:10px;
+  height:120px;
+  overflow:auto;
+  font-size:12px;
 }
 
 /* BUTTON */
 .nav-btn{
-  padding:6px 10px;
-  background:#22c55e;
+  background:#00ff9f;
   border:none;
-  border-radius:6px;
-  color:white;
+  padding:5px;
   cursor:pointer;
 }
 
-/* LOGOUT */
 .logout{
-  background:#ef4444;
-  padding:10px;
+  background:red;
   border:none;
+  padding:10px;
   color:white;
-  border-radius:8px;
 }
 
 </style>
@@ -182,42 +152,48 @@ th,td{
 <body>
 
 <div class="sidebar">
-  <h2>RapidRelief</h2>
-  <button onclick="loadUsers()">Users</button>
-  <button onclick="loadSOS()">SOS</button>
-  <button onclick="loadTrack()">Tracking</button>
-  <button onclick="loadCategory()">Category</button>
+  <h2>⚡ CORE</h2>
+  <button onclick="loadMode('users')">Users</button>
+  <button onclick="loadMode('sos')">SOS</button>
+  <button onclick="loadMode('track')">Tracking</button>
+  <button onclick="loadMode('category')">Category</button>
 </div>
 
 <div class="main">
 
   <div class="topbar">
-    <h1>Control Center</h1>
-    <div class="live">LIVE</div>
-    <button class="logout" onclick="logout()">Logout</button>
+    <h1>🧠 CONTROL CORE</h1>
+    <div class="live">● LIVE</div>
+    <button class="logout" onclick="logout()">EXIT</button>
   </div>
 
+  <!-- STATS -->
   <div class="cards">
-    <div class="card"><h2 id="u">0</h2><p>Users</p></div>
-    <div class="card"><h2 id="s">0</h2><p style="color:#ef4444;">SOS</p></div>
-    <div class="card"><h2 id="t">0</h2><p>Tracking</p></div>
-    <div class="card"><h2 id="c">0</h2><p>Category</p></div>
+    <div class="card"><h2 id="u">0</h2><p>USERS</p></div>
+    <div class="card"><h2 id="s">0</h2><p style="color:red;">SOS</p></div>
+    <div class="card"><h2 id="t">0</h2><p>TRACK</p></div>
+    <div class="card"><h2 id="c">0</h2><p>CATEGORY</p></div>
   </div>
 
-  <div id="adminMap"></div>
+  <!-- MAP -->
+  <div id="map"></div>
 
+  <!-- TABLE -->
   <table>
     <thead>
       <tr>
-        <th>User</th>
-        <th>Lat</th>
-        <th>Lon</th>
-        <th>Time</th>
-        <th>Action</th>
+        <th>USER</th>
+        <th>LAT</th>
+        <th>LON</th>
+        <th>TIME</th>
+        <th>GO</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+
+  <!-- TERMINAL -->
+  <div class="terminal" id="terminal"></div>
 
 </div>
 
@@ -225,42 +201,76 @@ th,td{
 
 <script>
 
-let map = L.map('adminMap').setView([10,76],7);
+/* MAP */
+let map = L.map('map').setView([10,76],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-function render(data){
-  const tbody=document.querySelector("tbody");
-  tbody.innerHTML="";
+let markers = {};
+let currentMode = "all";
 
-  data.slice().reverse().forEach((d,i)=>{
-    let row=document.createElement("tr");
-
-    if(i===0) row.classList.add("alert");
-
-    row.innerHTML=`
-      <td>${d.user||"Unknown"}</td>
-      <td>${d.lat||"-"}</td>
-      <td>${d.lon||"-"}</td>
-      <td>${d.time||"-"}</td>
-      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">Go</button>`:"-"}</td>
-    `;
-
-    tbody.appendChild(row);
-  });
+/* TERMINAL */
+function log(msg){
+  let t = document.getElementById("terminal");
+  t.innerHTML += msg + "<br>";
+  t.scrollTop = t.scrollHeight;
 }
 
-function plot(data){
-  data.forEach(d=>{
-    if(d.lat) L.marker([d.lat,d.lon]).addTo(map);
-  });
+/* UPDATE MARKERS */
+function updateMarker(user, lat, lon){
+  if(markers[user]){
+    markers[user].setLatLng([lat,lon]);
+  } else {
+    markers[user] = L.marker([lat,lon]).addTo(map)
+      .bindPopup(user);
+  }
 }
 
+/* TABLE */
+function addRow(d){
+  const tbody = document.querySelector("tbody");
+
+  let row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>${d.user}</td>
+    <td>${d.lat}</td>
+    <td>${d.lon}</td>
+    <td>${d.time}</td>
+    <td><button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">GO</button></td>
+  `;
+
+  tbody.prepend(row);
+}
+
+/* MAP NAV */
 function openMap(lat,lon){
   window.open(`https://maps.google.com?q=${lat},${lon}`);
 }
 
-function refreshAll(){
+/* LIVE CONNECTION */
+const live = new EventSource("/live");
 
+live.onmessage = (e)=>{
+  const msg = JSON.parse(e.data);
+
+  if(msg.type==="track"){
+    updateMarker(msg.data.user,msg.data.lat,msg.data.lon);
+    addRow(msg.data);
+    log("TRACK UPDATE: " + msg.data.user);
+  }
+
+  if(msg.type==="sos"){
+    updateMarker(msg.data.user,msg.data.lat,msg.data.lon);
+    addRow(msg.data);
+    log("🚨 SOS ALERT: " + msg.data.user);
+
+    document.body.style.boxShadow="inset 0 0 80px red";
+    setTimeout(()=>{document.body.style.boxShadow="none";},800);
+  }
+};
+
+/* LOAD COUNTS */
+function refreshStats(){
   Promise.all([
     fetch("/admin/users").then(r=>r.json()),
     fetch("/admin/sos").then(r=>r.json()),
@@ -268,24 +278,19 @@ function refreshAll(){
     fetch("/admin/category").then(r=>r.json())
   ])
   .then(([u,s,t,c])=>{
-
     document.getElementById("u").innerText=u.length;
     document.getElementById("s").innerText=s.length;
     document.getElementById("t").innerText=t.length;
     document.getElementById("c").innerText=c.length;
-
-    render([...s,...t]);
-    plot([...s,...t]);
   });
 }
 
-setInterval(refreshAll,4000);
-refreshAll();
+setInterval(refreshStats,3000);
+refreshStats();
 
-function loadUsers(){ fetch("/admin/users").then(r=>r.json()).then(render); }
-function loadSOS(){ fetch("/admin/sos").then(r=>r.json()).then(render); }
-function loadTrack(){ fetch("/admin/track").then(r=>r.json()).then(render); }
-function loadCategory(){ fetch("/admin/category").then(r=>r.json()).then(render); }
+function loadMode(mode){
+  log("MODE SWITCH: " + mode.toUpperCase());
+}
 
 function logout(){
   window.location="/logout";
