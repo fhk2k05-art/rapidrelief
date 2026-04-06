@@ -97,9 +97,17 @@ app.post("/register",(req,res)=>{
 /* LOGIN */
 app.post("/login",(req,res)=>{
 
-  let users = load("users.json");
-
   const { username, password } = req.body;
+
+  /* ⭐ ADMIN LOGIN (ALWAYS WORKS) */
+  if(username === "admin" && password === "7257"){
+    req.session.user = "admin";
+    console.log("✅ Admin logged in");
+    return res.json({status:"admin"});
+  }
+
+  /* 👤 NORMAL USER LOGIN */
+  let users = load("users.json");
 
   const user = users.find(u =>
     u.username === username && u.password === password
@@ -107,19 +115,11 @@ app.post("/login",(req,res)=>{
 
   if(user){
     req.session.user = user.username;
-
-    console.log("✅ Login:", user.username);
-
-    if(user.username==="admin"){
-      return res.json({status:"admin"});
-    } else {
-      return res.json({status:"user"});
-    }
+    return res.json({status:"user"});
   }
 
   res.json({status:"fail"});
 });
-
 /* FACE LOGIN */
 app.post("/face-login",(req,res)=>{
   const { username } = req.body;
