@@ -228,10 +228,6 @@ app.get("/admin/track", isAdmin, (req,res)=>{
 app.get("/admin/category", isAdmin, (req,res)=>{
   res.json(load("category.json"));
 });
-app.get("/readme",(req,res)=>{
-  res.sendFile(path.join(__dirname,"readme.html"));
-});
-
 /* =========================
    START SERVER
 ========================= */
