@@ -11,55 +11,49 @@
 /* ===== GLOBAL ===== */
 body{
   margin:0;
-  font-family:"Segoe UI", sans-serif;
+  font-family:"Orbitron", monospace;
   display:flex;
-  background:#020617;
-  color:#e2e8f0;
+  background:black;
+  color:#00ffff;
+  overflow:hidden;
 }
 
-/* SCANLINE */
-body::after{
-  content:"";
+/* MATRIX BACKGROUND */
+#matrix{
   position:fixed;
+  top:0;
+  left:0;
   width:100%;
   height:100%;
-  background:repeating-linear-gradient(
-    0deg,
-    rgba(255,255,255,0.02),
-    rgba(255,255,255,0.02) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  pointer-events:none;
+  z-index:-1;
 }
 
 /* SIDEBAR */
 .sidebar{
   width:230px;
   padding:20px;
-  background:#020617;
-  border-right:1px solid rgba(56,189,248,0.2);
+  background:rgba(0,0,0,0.85);
+  border-right:1px solid #00ffff;
 }
 
 .sidebar h2{
   text-align:center;
-  color:#38bdf8;
+  text-shadow:0 0 10px #00ffff;
 }
 
 .sidebar button{
   width:100%;
   padding:12px;
   margin:10px 0;
-  border:none;
-  border-radius:10px;
-  background:#0f172a;
-  color:#cbd5e1;
+  background:black;
+  border:1px solid #00ffff;
+  color:#00ffff;
   cursor:pointer;
 }
 
 .sidebar button:hover{
-  background:#38bdf8;
-  color:#020617;
+  background:#00ffff;
+  color:black;
 }
 
 /* MAIN */
@@ -68,120 +62,87 @@ body::after{
   padding:20px;
 }
 
-/* TOPBAR */
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+/* GLITCH TITLE */
+.glitch{
+  font-size:26px;
+  animation:glitch 1s infinite;
 }
 
-.live-dot{
-  color:#22c55e;
-  font-weight:bold;
-}
-
-.logout{
-  background:#ef4444;
-  padding:10px;
-  border:none;
-  color:white;
-  border-radius:8px;
+@keyframes glitch{
+  0%{text-shadow:2px 0 red;}
+  50%{text-shadow:-2px 0 blue;}
+  100%{text-shadow:2px 0 red;}
 }
 
 /* CARDS */
 .cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:15px;
+  gap:10px;
   margin-top:20px;
 }
 
 .card{
-  background:#0f172a;
-  padding:20px;
-  border-radius:14px;
+  border:1px solid #00ffff;
+  padding:15px;
   text-align:center;
-  border:1px solid rgba(56,189,248,0.1);
-  transition:0.3s;
-}
-
-.card:hover{
-  box-shadow:0 0 20px rgba(56,189,248,0.3);
+  box-shadow:0 0 10px #00ffff;
 }
 
 /* CHART */
 .chart-box{
-  background:#0f172a;
-  padding:20px;
-  border-radius:14px;
   margin-top:20px;
+  border:1px solid #00ffff;
+  padding:20px;
 }
 
 /* TABLE */
 table{
   width:100%;
   margin-top:20px;
-  border-collapse:collapse;
-  background:#0f172a;
 }
 
-th{
-  background:#020617;
-  color:#64748b;
-  padding:12px;
-}
-
-td{
-  padding:12px;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-}
-
-tr:hover{
-  background:#1e293b;
+td,th{
+  border-bottom:1px solid #00ffff;
+  padding:10px;
 }
 
 /* ALERT */
-@keyframes glow{
+@keyframes pulse{
   0%{box-shadow:0 0 5px red;}
-  50%{box-shadow:0 0 20px red;}
+  50%{box-shadow:0 0 25px red;}
   100%{box-shadow:0 0 5px red;}
 }
 
 .alert{
-  background:rgba(239,68,68,0.2);
-  animation:glow 1.5s infinite;
-}
-
-/* NEW ROW */
-@keyframes slide{
-  from{transform:translateY(-10px);opacity:0;}
-  to{transform:translateY(0);opacity:1;}
-}
-
-.new-row{
-  animation:slide 0.4s ease;
+  color:red;
+  animation:pulse 1s infinite;
 }
 
 /* BUTTON */
 .nav-btn{
-  padding:6px 10px;
-  background:#22c55e;
+  background:#00ffff;
   border:none;
-  border-radius:6px;
-  color:white;
+  padding:6px;
   cursor:pointer;
 }
 
 /* TERMINAL */
 .terminal{
   margin-top:15px;
-  background:#020617;
-  border:1px solid rgba(56,189,248,0.2);
+  border:1px solid #00ffff;
   padding:10px;
   height:100px;
   overflow:auto;
   font-size:12px;
-  color:#22c55e;
+  color:#00ff9f;
+}
+
+.logout{
+  background:red;
+  border:none;
+  padding:10px;
+  color:white;
 }
 
 </style>
@@ -189,8 +150,10 @@ tr:hover{
 
 <body>
 
+<canvas id="matrix"></canvas>
+
 <div class="sidebar">
-  <h2>⚡ CONTROL</h2>
+  <h2>⚡ CORE</h2>
   <button onclick="loadUsers()">Users</button>
   <button onclick="loadSOS()">SOS</button>
   <button onclick="loadTrack()">Tracking</button>
@@ -199,17 +162,16 @@ tr:hover{
 
 <div class="main">
 
-  <div class="topbar">
-    <h1>🧠 Control Core</h1>
-    <div class="live-dot">● LIVE</div>
-    <button class="logout" onclick="logout()">Logout</button>
+  <div style="display:flex;justify-content:space-between;">
+    <h1 class="glitch">🧠 SYSTEM CORE</h1>
+    <button class="logout" onclick="logout()">EXIT</button>
   </div>
 
   <div class="cards">
-    <div class="card"><h3 id="u">0</h3><p>Users</p></div>
-    <div class="card"><h3 id="s">0</h3><p style="color:#ef4444;">SOS</p></div>
-    <div class="card"><h3 id="t">0</h3><p>Tracking</p></div>
-    <div class="card"><h3 id="c">0</h3><p>Category</p></div>
+    <div class="card"><h3 id="u">0</h3><p>USERS</p></div>
+    <div class="card"><h3 id="s">0</h3><p>SOS</p></div>
+    <div class="card"><h3 id="t">0</h3><p>TRACK</p></div>
+    <div class="card"><h3 id="c">0</h3><p>CATEGORY</p></div>
   </div>
 
   <div class="chart-box">
@@ -219,11 +181,11 @@ tr:hover{
   <table id="table">
     <thead>
       <tr>
-        <th>User</th>
-        <th>Lat</th>
-        <th>Lon</th>
-        <th>Time</th>
-        <th>Action</th>
+        <th>USER</th>
+        <th>LAT</th>
+        <th>LON</th>
+        <th>TIME</th>
+        <th>GO</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -252,11 +214,11 @@ function updateChart(u,s,t,c){
       labels:["Users","SOS","Tracking","Category"],
       datasets:[{
         data:[u,s,t,c],
-        backgroundColor:["#38bdf8","#ef4444","#22c55e","#f59e0b"]
+        backgroundColor:["#00ffff","red","#00ff9f","orange"]
       }]
     },
     options:{
-      plugins:{legend:{labels:{color:"white"}}}
+      plugins:{legend:{labels:{color:"#00ffff"}}}
     }
   });
 }
@@ -274,11 +236,11 @@ function render(data){
     if(i===0) row.classList.add("alert");
 
     row.innerHTML=`
-      <td>${d.user||"Unknown"}</td>
+      <td>${d.user||"X"}</td>
       <td>${d.lat||"-"}</td>
       <td>${d.lon||"-"}</td>
       <td>${d.time||"-"}</td>
-      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">📍 Go</button>`:"-"}</td>
+      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">GO</button>`:"-"}</td>
     `;
 
     tbody.appendChild(row);
@@ -303,14 +265,10 @@ function refreshAll(){
 
     updateChart(u.length,s.length,t.length,c.length);
     render([...s,...t]);
+
+    log("SYSTEM SYNC");
   });
 }
-
-/* BUTTON LOAD */
-function loadUsers(){ fetch("/admin/users").then(r=>r.json()).then(render); }
-function loadSOS(){ fetch("/admin/sos").then(r=>r.json()).then(render); }
-function loadTrack(){ fetch("/admin/track").then(r=>r.json()).then(render); }
-function loadCategory(){ fetch("/admin/category").then(r=>r.json()).then(render); }
 
 /* TERMINAL */
 function log(msg){
@@ -319,47 +277,45 @@ function log(msg){
   t.scrollTop=t.scrollHeight;
 }
 
-/* REALTIME */
-const live = new EventSource("/live");
-
-live.onopen=()=>log("🟢 LIVE CONNECTED");
-
-live.onerror=()=>log("🔴 LIVE ERROR");
-
-live.onmessage=(e)=>{
-
-  const msg=JSON.parse(e.data);
-  const d=msg.data;
-
-  let tbody=document.querySelector("#table tbody");
-
-  let row=document.createElement("tr");
-  row.classList.add("new-row","alert");
-
-  row.innerHTML=`
-    <td>${d.user}</td>
-    <td>${d.lat}</td>
-    <td>${d.lon}</td>
-    <td>${d.time}</td>
-    <td><button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">📍 Go</button></td>
-  `;
-
-  tbody.prepend(row);
-
-  if(msg.type==="sos"){
-    log("🚨 SOS: "+d.user);
-    document.body.style.boxShadow="inset 0 0 120px red";
-    setTimeout(()=>document.body.style.boxShadow="none",800);
-  }
-
-  if(msg.type==="track"){
-    log("📍 TRACK: "+d.user);
-  }
-};
-
 /* AUTO */
 setInterval(refreshAll,5000);
 refreshAll();
+
+/* MATRIX EFFECT */
+const canvas=document.getElementById("matrix");
+const ctx=canvas.getContext("2d");
+
+canvas.height=window.innerHeight;
+canvas.width=window.innerWidth;
+
+let letters="01";
+letters=letters.split("");
+
+let fontSize=14;
+let columns=canvas.width/fontSize;
+
+let drops=[];
+for(let x=0;x<columns;x++) drops[x]=1;
+
+function draw(){
+  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle="#0f0";
+  ctx.font=fontSize+"px monospace";
+
+  for(let i=0;i<drops.length;i++){
+    let text=letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+    if(drops[i]*fontSize>canvas.height && Math.random()>0.975)
+      drops[i]=0;
+
+    drops[i]++;
+  }
+}
+
+setInterval(draw,33);
 
 function logout(){
   window.location="/logout";
