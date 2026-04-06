@@ -1,50 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief // Control Core</title>
+<title>RapidRelief Control Core</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
 <style>
 
+/* ===== GLOBAL ===== */
 body{
   margin:0;
-  font-family:"Courier New", monospace;
+  font-family:"Segoe UI",sans-serif;
   background:#020617;
-  color:#00ff9f;
+  color:#e2e8f0;
   display:flex;
 }
 
-/* SIDEBAR */
+/* ===== SIDEBAR ===== */
 .sidebar{
-  width:230px;
+  width:240px;
   padding:20px;
-  border-right:1px solid #00ff9f;
+  border-right:1px solid #1e293b;
 }
 
 .sidebar h2{
+  color:#38bdf8;
   text-align:center;
-  text-shadow:0 0 10px #00ff9f;
 }
 
 .sidebar button{
   width:100%;
-  padding:10px;
-  margin:10px 0;
-  background:transparent;
-  border:1px solid #00ff9f;
-  color:#00ff9f;
+  padding:12px;
+  margin:8px 0;
+  background:#0f172a;
+  border:none;
+  color:#cbd5e1;
+  border-radius:10px;
   cursor:pointer;
 }
 
 .sidebar button:hover{
-  background:#00ff9f;
-  color:black;
+  background:#1e293b;
 }
 
-/* MAIN */
+/* ===== MAIN ===== */
 .main{
   flex:1;
   padding:20px;
@@ -54,74 +56,72 @@ body{
 .topbar{
   display:flex;
   justify-content:space-between;
+  align-items:center;
 }
 
-.live{
-  animation:blink 1s infinite;
-}
-
-@keyframes blink{
-  50%{opacity:0;}
+.status{
+  color:#22c55e;
 }
 
 /* CARDS */
 .cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:10px;
+  gap:15px;
 }
 
 .card{
-  border:1px solid #00ff9f;
-  padding:15px;
-  text-align:center;
+  background:#0f172a;
+  padding:20px;
+  border-radius:12px;
 }
 
 /* MAP */
 #map{
-  height:300px;
+  height:320px;
   margin-top:20px;
-  border:1px solid #00ff9f;
+  border-radius:12px;
 }
 
 /* TABLE */
 table{
   width:100%;
   margin-top:20px;
+  background:#0f172a;
 }
 
 td,th{
-  border-bottom:1px solid #00ff9f;
-  padding:8px;
+  padding:10px;
+  border-bottom:1px solid #1e293b;
 }
 
-/* ALERT */
 .alert{
-  color:red;
-  animation:blink 0.5s infinite;
+  background:rgba(255,0,0,0.15);
 }
 
 /* TERMINAL */
 .terminal{
   margin-top:15px;
-  border:1px solid #00ff9f;
+  background:black;
+  color:#22c55e;
   padding:10px;
   height:120px;
   overflow:auto;
+  font-size:13px;
 }
 
 /* BUTTON */
 .nav-btn{
-  background:#00ff9f;
+  background:#22c55e;
   border:none;
-  padding:5px;
-  cursor:pointer;
+  padding:5px 8px;
+  color:white;
 }
 
 .logout{
   background:red;
   border:none;
-  padding:10px;
+  padding:8px;
   color:white;
 }
 
@@ -131,22 +131,27 @@ td,th{
 <body>
 
 <div class="sidebar">
-  <h2>⚡ CORE</h2>
+  <h2>RapidRelief</h2>
+  <button onclick="setMode('all')">All</button>
+  <button onclick="setMode('sos')">SOS</button>
+  <button onclick="setMode('track')">Tracking</button>
+  <button onclick="setMode('users')">Users</button>
+  <button onclick="setMode('category')">Category</button>
 </div>
 
 <div class="main">
 
   <div class="topbar">
-    <h1>🧠 CONTROL CORE</h1>
-    <div class="live">● LIVE</div>
-    <button class="logout" onclick="logout()">EXIT</button>
+    <h1>Control Core</h1>
+    <div class="status">● Active</div>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
   <div class="cards">
-    <div class="card"><h2 id="u">0</h2><p>USERS</p></div>
-    <div class="card"><h2 id="s">0</h2><p style="color:red;">SOS</p></div>
-    <div class="card"><h2 id="t">0</h2><p>TRACK</p></div>
-    <div class="card"><h2 id="c">0</h2><p>CATEGORY</p></div>
+    <div class="card"><h2 id="u">0</h2><p>Users</p></div>
+    <div class="card"><h2 id="s">0</h2><p>SOS</p></div>
+    <div class="card"><h2 id="t">0</h2><p>Tracking</p></div>
+    <div class="card"><h2 id="c">0</h2><p>Category</p></div>
   </div>
 
   <div id="map"></div>
@@ -154,11 +159,11 @@ td,th{
   <table>
     <thead>
       <tr>
-        <th>USER</th>
-        <th>LAT</th>
-        <th>LON</th>
-        <th>TIME</th>
-        <th>GO</th>
+        <th>User</th>
+        <th>Lat</th>
+        <th>Lon</th>
+        <th>Time</th>
+        <th>Go</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -172,55 +177,56 @@ td,th{
 
 <script>
 
-/* MAP */
 let map = L.map('map').setView([10,76],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let markers = {};
+let paths = {};
+let heatPoints = [];
+let heatLayer = L.heatLayer([], {radius:25}).addTo(map);
+
+let ALL_DATA = {};
+let currentMode = "all";
 
 /* LOG */
 function log(msg){
-  let t = document.getElementById("terminal");
-  t.innerHTML += msg + "<br>";
-  t.scrollTop = t.scrollHeight;
+  let t=document.getElementById("terminal");
+  t.innerHTML += msg+"<br>";
+  t.scrollTop=t.scrollHeight;
 }
 
 /* MARKER */
 function updateMarker(user, lat, lon){
   if(markers[user]){
     markers[user].setLatLng([lat,lon]);
+    paths[user].addLatLng([lat,lon]);
   } else {
     markers[user] = L.marker([lat,lon]).addTo(map).bindPopup(user);
+    paths[user] = L.polyline([[lat,lon]],{color:"#22c55e"}).addTo(map);
   }
 }
 
 /* TABLE */
-function renderTable(data){
-
-  const tbody = document.querySelector("tbody");
-  tbody.innerHTML = "";
+function render(data){
+  const tbody=document.querySelector("tbody");
+  tbody.innerHTML="";
 
   data.slice().reverse().forEach((d,i)=>{
-
-    let row = document.createElement("tr");
+    let row=document.createElement("tr");
 
     if(i===0) row.classList.add("alert");
 
-    row.innerHTML = `
+    row.innerHTML=`
       <td>${d.user||"Unknown"}</td>
       <td>${d.lat||"-"}</td>
       <td>${d.lon||"-"}</td>
       <td>${d.time||"-"}</td>
-      <td>
-        ${d.lat ? `<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">GO</button>` : "-"}
-      </td>
+      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">Go</button>`:"-"}</td>
     `;
 
     tbody.appendChild(row);
 
-    if(d.lat){
-      updateMarker(d.user,d.lat,d.lon);
-    }
+    if(d.lat) updateMarker(d.user,d.lat,d.lon);
   });
 }
 
@@ -229,61 +235,8 @@ function openMap(lat,lon){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`);
 }
 
-/* LOAD OLD DATA */
-function loadInitialData(){
-
-  Promise.all([
-    fetch("/admin/sos").then(r=>r.json()),
-    fetch("/admin/track").then(r=>r.json())
-  ])
-  .then(([sos,track])=>{
-
-    let combined = [...sos,...track];
-
-    renderTable(combined);
-
-    log("SYSTEM READY");
-  });
-}
-
-/* REALTIME */
-const live = new EventSource("/live");
-
-live.onmessage = (e)=>{
-  const msg = JSON.parse(e.data);
-
-  updateMarker(msg.data.user,msg.data.lat,msg.data.lon);
-
-  const tbody = document.querySelector("tbody");
-
-  let row = document.createElement("tr");
-
-  row.classList.add("alert");
-
-  row.innerHTML = `
-    <td>${msg.data.user}</td>
-    <td>${msg.data.lat}</td>
-    <td>${msg.data.lon}</td>
-    <td>${msg.data.time}</td>
-    <td><button class="nav-btn" onclick="openMap(${msg.data.lat},${msg.data.lon})">GO</button></td>
-  `;
-
-  tbody.prepend(row);
-
-  if(msg.type==="sos"){
-    log("🚨 SOS ALERT: "+msg.data.user);
-
-    document.body.style.boxShadow="inset 0 0 80px red";
-    setTimeout(()=>{document.body.style.boxShadow="none";},800);
-  }
-
-  if(msg.type==="track"){
-    log("TRACK: "+msg.data.user);
-  }
-};
-
-/* STATS */
-function refreshStats(){
+/* LOAD */
+function loadInitial(){
   Promise.all([
     fetch("/admin/users").then(r=>r.json()),
     fetch("/admin/sos").then(r=>r.json()),
@@ -291,18 +244,78 @@ function refreshStats(){
     fetch("/admin/category").then(r=>r.json())
   ])
   .then(([u,s,t,c])=>{
+    ALL_DATA = {u,s,t,c};
+
     document.getElementById("u").innerText=u.length;
     document.getElementById("s").innerText=s.length;
     document.getElementById("t").innerText=t.length;
     document.getElementById("c").innerText=c.length;
+
+    applyMode();
+
+    heatPoints = s.map(x=>[x.lat,x.lon,1]);
+    heatLayer.setLatLngs(heatPoints);
+
+    log("SYSTEM INITIALIZED");
   });
 }
 
-setInterval(refreshStats,3000);
+/* MODE */
+function setMode(mode){
+  currentMode = mode;
+  applyMode();
+}
 
-/* INIT */
-loadInitialData();
-refreshStats();
+/* APPLY MODE */
+function applyMode(){
+  let data;
+
+  if(currentMode==="users") data = ALL_DATA.u;
+  else if(currentMode==="sos") data = ALL_DATA.s;
+  else if(currentMode==="track") data = ALL_DATA.t;
+  else if(currentMode==="category") data = ALL_DATA.c;
+  else data = [...ALL_DATA.s,...ALL_DATA.t];
+
+  render(data);
+}
+
+/* REALTIME */
+const live = new EventSource("/live");
+
+live.onmessage = (e)=>{
+  const msg = JSON.parse(e.data);
+  const d = msg.data;
+
+  if(msg.type==="sos") ALL_DATA.s.push(d);
+  if(msg.type==="track") ALL_DATA.t.push(d);
+
+  updateMarker(d.user,d.lat,d.lon);
+
+  applyMode();
+
+  if(msg.type==="sos"){
+    map.setView([d.lat,d.lon],15);
+
+    heatPoints.push([d.lat,d.lon,1]);
+    heatLayer.setLatLngs(heatPoints);
+
+    log("🚨 SOS: "+d.user);
+  }
+
+  if(msg.type==="track"){
+    log("TRACK: "+d.user);
+  }
+};
+
+/* REFRESH USERS */
+setInterval(()=>{
+  fetch("/admin/users").then(r=>r.json())
+  .then(u=>{
+    document.getElementById("u").innerText=u.length;
+  });
+},3000);
+
+loadInitial();
 
 function logout(){
   window.location="/logout";
