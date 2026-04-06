@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>RapidRelief Control System</title>
+<title>RapidRelief // CORE TERMINAL</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -10,41 +10,50 @@
 
 <style>
 
+/* MATRIX BACKGROUND */
+canvas#matrix {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:-1;
+}
+
+/* GLOBAL */
 body{
   margin:0;
-  font-family:Segoe UI;
+  font-family:"Courier New", monospace;
+  color:#00ff9f;
   display:flex;
-  background:#020617;
-  color:white;
 }
 
 /* SIDEBAR */
 .sidebar{
-  width:240px;
-  background:#020617;
+  width:220px;
   padding:20px;
-  border-right:1px solid #1e293b;
+  background:rgba(0,0,0,0.9);
+  border-right:1px solid #00ff9f;
 }
 
 .sidebar h2{
   text-align:center;
-  color:#38bdf8;
+  text-shadow:0 0 10px #00ff9f;
 }
 
 .sidebar button{
   width:100%;
-  padding:12px;
   margin:10px 0;
-  border:none;
-  border-radius:10px;
-  background:#1e293b;
-  color:white;
+  padding:10px;
+  background:black;
+  border:1px solid #00ff9f;
+  color:#00ff9f;
   cursor:pointer;
-  transition:0.3s;
 }
 
 .sidebar button:hover{
-  background:#38bdf8;
+  background:#00ff9f;
+  color:black;
 }
 
 /* MAIN */
@@ -53,90 +62,110 @@ body{
   padding:20px;
 }
 
-/* TOP BAR */
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+/* GLITCH TITLE */
+.glitch{
+  font-size:24px;
+  animation:glitch 1s infinite;
 }
 
-.live{
-  color:#22c55e;
-  font-weight:bold;
+@keyframes glitch{
+  0%{text-shadow:2px 0 red;}
+  50%{text-shadow:-2px 0 blue;}
+  100%{text-shadow:2px 0 red;}
 }
+
+/* LIVE TEXT */
+.live{
+  animation:blink 1s infinite;
+}
+@keyframes blink{50%{opacity:0;}}
 
 /* CARDS */
 .cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:15px;
-  margin-top:20px;
+  gap:10px;
 }
 
 .card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:12px;
+  border:1px solid #00ff9f;
+  padding:15px;
   text-align:center;
-  box-shadow:0 0 10px rgba(56,189,248,0.2);
+  box-shadow:0 0 10px #00ff9f;
+}
+
+/* RADAR */
+.radar{
+  width:200px;
+  height:200px;
+  border-radius:50%;
+  border:2px solid #00ff9f;
+  margin:20px auto;
+  position:relative;
+  overflow:hidden;
+}
+
+.radar::before{
+  content:"";
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:conic-gradient(rgba(0,255,159,0.4), transparent);
+  animation:spin 2s linear infinite;
+}
+
+@keyframes spin{
+  100%{transform:rotate(360deg);}
 }
 
 /* MAP */
 #adminMap{
-  height:300px;
+  height:250px;
   margin-top:20px;
-  border-radius:12px;
-}
-
-/* CHART */
-.chart-box{
-  background:#1e293b;
-  padding:20px;
-  border-radius:12px;
-  margin-top:20px;
+  border:1px solid #00ff9f;
 }
 
 /* TABLE */
 table{
   width:100%;
   margin-top:20px;
-  border-collapse:collapse;
 }
 
-th,td{
-  padding:12px;
-  border-bottom:1px solid #334155;
-  text-align:center;
+td,th{
+  border-bottom:1px solid #00ff9f;
+  padding:8px;
 }
 
 /* ALERT */
 .alert{
-  background:#7f1d1d;
-  animation:pulse 1s infinite;
+  color:red;
+  animation:blink 0.5s infinite;
 }
 
-@keyframes pulse{
-  0%{box-shadow:0 0 5px red;}
-  50%{box-shadow:0 0 20px red;}
-  100%{box-shadow:0 0 5px red;}
+/* TERMINAL */
+.terminal{
+  background:black;
+  border:1px solid #00ff9f;
+  padding:10px;
+  margin-top:20px;
+  height:120px;
+  overflow:auto;
+  font-size:12px;
 }
 
 /* BUTTON */
 .nav-btn{
-  padding:6px 10px;
-  background:#22c55e;
+  background:#00ff9f;
   border:none;
-  border-radius:6px;
-  color:white;
+  padding:5px;
   cursor:pointer;
 }
 
 .logout{
   background:red;
-  padding:10px;
   border:none;
+  padding:10px;
   color:white;
-  border-radius:8px;
 }
 
 </style>
@@ -144,8 +173,10 @@ th,td{
 
 <body>
 
+<canvas id="matrix"></canvas>
+
 <div class="sidebar">
-  <h2>🚨 Control</h2>
+  <h2>⚡ CORE</h2>
   <button onclick="loadUsers()">Users</button>
   <button onclick="loadSOS()">SOS</button>
   <button onclick="loadTrack()">Tracking</button>
@@ -154,41 +185,37 @@ th,td{
 
 <div class="main">
 
-  <div class="topbar">
-    <h1>🧠 Control Panel</h1>
-    <div class="live">● LIVE</div>
-    <button class="logout" onclick="logout()">Logout</button>
+  <div style="display:flex;justify-content:space-between;">
+    <h1 class="glitch">🧠 SYSTEM CORE</h1>
+    <div class="live">● ONLINE</div>
+    <button class="logout" onclick="logout()">EXIT</button>
   </div>
 
-  <!-- CARDS -->
   <div class="cards">
-    <div class="card"><h3 id="u">0</h3><p>Users</p></div>
-    <div class="card"><h3 id="s">0</h3><p style="color:red;">SOS</p></div>
-    <div class="card"><h3 id="t">0</h3><p>Tracking</p></div>
-    <div class="card"><h3 id="c">0</h3><p>Category</p></div>
+    <div class="card"><h2 id="u">0</h2><p>USERS</p></div>
+    <div class="card"><h2 id="s">0</h2><p style="color:red;">SOS</p></div>
+    <div class="card"><h2 id="t">0</h2><p>TRACK</p></div>
+    <div class="card"><h2 id="c">0</h2><p>CATEGORY</p></div>
   </div>
 
-  <!-- MAP -->
+  <div class="radar"></div>
+
   <div id="adminMap"></div>
 
-  <!-- CHART -->
-  <div class="chart-box">
-    <canvas id="chart"></canvas>
-  </div>
-
-  <!-- TABLE -->
-  <table id="table">
+  <table>
     <thead>
       <tr>
-        <th>User</th>
-        <th>Lat</th>
-        <th>Lon</th>
-        <th>Time</th>
-        <th>Action</th>
+        <th>USER</th>
+        <th>LAT</th>
+        <th>LON</th>
+        <th>TIME</th>
+        <th>GO</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+
+  <div class="terminal" id="terminal"></div>
 
 </div>
 
@@ -196,76 +223,86 @@ th,td{
 
 <script>
 
-let chart;
-let lastSOS = 0;
+/* MATRIX RAIN */
+const canvas=document.getElementById("matrix");
+const ctx=canvas.getContext("2d");
+
+canvas.height=window.innerHeight;
+canvas.width=window.innerWidth;
+
+let letters="01";
+letters=letters.split("");
+
+let fontSize=14;
+let columns=canvas.width/fontSize;
+
+let drops=[];
+for(let x=0;x<columns;x++) drops[x]=1;
+
+function draw(){
+  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle="#0f0";
+  ctx.font=fontSize+"px monospace";
+
+  for(let i=0;i<drops.length;i++){
+    let text=letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+    if(drops[i]*fontSize>canvas.height && Math.random()>0.975)
+      drops[i]=0;
+
+    drops[i]++;
+  }
+}
+setInterval(draw,33);
 
 /* MAP */
-let adminMap = L.map('adminMap').setView([10,76],7);
+let map=L.map('adminMap').setView([10,76],7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
-
-/* MAP NAV */
-function openMap(lat,lon){
-  window.open(`https://www.google.com/maps?q=${lat},${lon}`);
-}
-
-/* CHART */
-function updateChart(u,s,t,c){
-  if(chart) chart.destroy();
-
-  chart = new Chart(document.getElementById("chart"), {
-    type:"doughnut",
-    data:{
-      labels:["Users","SOS","Tracking","Category"],
-      datasets:[{
-        data:[u,s,t,c],
-        backgroundColor:["#38bdf8","#ef4444","#22c55e","#f59e0b"]
-      }]
-    },
-    options:{
-      plugins:{legend:{labels:{color:"white"}}}
-    }
-  });
+/* TERMINAL LOG */
+function log(msg){
+  let t=document.getElementById("terminal");
+  t.innerHTML+=msg+"<br>";
+  t.scrollTop=t.scrollHeight;
 }
 
 /* TABLE */
 function render(data){
-
-  const tbody=document.querySelector("#table tbody");
+  const tbody=document.querySelector("tbody");
   tbody.innerHTML="";
 
   data.slice().reverse().forEach((d,i)=>{
-
     let row=document.createElement("tr");
 
     if(i===0) row.classList.add("alert");
 
     row.innerHTML=`
-      <td>${d.user||"Unknown"}</td>
+      <td>${d.user||"X"}</td>
       <td>${d.lat||"-"}</td>
       <td>${d.lon||"-"}</td>
       <td>${d.time||"-"}</td>
-      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">📍</button>`:"-"}</td>
+      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">GO</button>`:"-"}</td>
     `;
 
     tbody.appendChild(row);
   });
 }
 
-/* MAP PLOT */
-function plotMap(data){
-  adminMap.eachLayer(layer=>{
-    if(layer instanceof L.Marker) adminMap.removeLayer(layer);
-  });
-
+/* MAP */
+function plot(data){
   data.forEach(d=>{
-    if(d.lat && d.lon){
-      L.marker([d.lat,d.lon]).addTo(adminMap);
-    }
+    if(d.lat) L.marker([d.lat,d.lon]).addTo(map);
   });
 }
 
-/* LIVE REFRESH */
+function openMap(lat,lon){
+  window.open(`https://maps.google.com?q=${lat},${lon}`);
+}
+
+/* LIVE */
 function refreshAll(){
 
   Promise.all([
@@ -281,26 +318,20 @@ function refreshAll(){
     document.getElementById("t").innerText=t.length;
     document.getElementById("c").innerText=c.length;
 
-    updateChart(u.length,s.length,t.length,c.length);
-
     render([...s,...t]);
-    plotMap([...s,...t]);
+    plot([...s,...t]);
 
-    /* 🚨 ALERT SOUND */
-    if(s.length > lastSOS){
+    log(">> SYSTEM UPDATE: "+new Date().toLocaleTimeString());
+
+    if(s.length>0){
       new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+      log("🚨 ALERT DETECTED");
     }
-    lastSOS = s.length;
 
   });
 }
 
-function loadUsers(){ fetch("/admin/users").then(r=>r.json()).then(render); }
-function loadSOS(){ fetch("/admin/sos").then(r=>r.json()).then(render); }
-function loadTrack(){ fetch("/admin/track").then(r=>r.json()).then(render); }
-function loadCategory(){ fetch("/admin/category").then(r=>r.json()).then(render); }
-
-setInterval(refreshAll,5000);
+setInterval(refreshAll,3000);
 refreshAll();
 
 function logout(){
