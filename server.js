@@ -1,75 +1,49 @@
-// =============================
-// 🚀 RAPID RELIEF SERVER (FINAL)
-// =============================
-
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const session = require("express-session");
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const http = require("http");
-const { Server } = require("socket.io");
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
 const PORT = process.env.PORT || 3000;
 
-// =========================
-// 🧠 DATABASE (MongoDB)
-// =========================
-mongoose.connect("mongodb://127.0.0.1:27017/rapidrelief")
-.then(()=>console.log("✅ MongoDB Connected"))
-.catch(err=>console.log(err));
-
-// =========================
-// 📦 SCHEMAS
-// =========================
-const User = mongoose.model("User",{
-  username:String,
-  password:String,
-  face:String,
-  time:String
-});
-
-const SOS = mongoose.model("SOS",{
-  lat:Number,
-  lon:Number,
-  user:String,
-  time:String
-});
-
-const Track = mongoose.model("Track",{
-  lat:Number,
-  lon:Number,
-  user:String,
-  time:String
-});
-
-const Category = mongoose.model("Category",{
-  type:String,
-  user:String,
-  time:String
-});
-
-// =========================
-// ⚙️ MIDDLEWARE
-// =========================
+/* =========================
+   MIDDLEWARE
+========================= */
 app.use(express.json());
-app.use(express.urlencoded({ extended:true }));
+app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret:"rapidrelief_secret",
-  resave:false,
-  saveUninitialized:true
+  secret: "rapidrelief_secret",
+  resave: false,
+  saveUninitialized: true
 }));
 
 app.use(express.static(__dirname));
 
-// =========================
-// 🌐 ROUTES
-// =========================
+/* =========================
+   FILE SETUP
+========================= */
+
+function ensureFile(file){
+  if(!fs.existsSync(file)){
+    fs.writeFileSync(file, "[]");
+  }
+}
+
+["users.json","sos.json","track.json","category.json"].forEach(ensureFile);
+
+function load(file){
+  return JSON.parse(fs.readFileSync(file));
+}
+
+function save(file,data){
+  fs.writeFileSync(file, JSON.stringify(data,null,2));
+}
+
+/* =========================
+   ROUTES
+========================= */
+
 app.get("/", (req,res)=>{
   res.sendFile(path.join(__dirname,"login.html"));
 });
@@ -80,56 +54,63 @@ app.get("/dashboard",(req,res)=>{
 });
 
 app.get("/admin",(req,res)=>{
-  if(req.session.user === "admin"){
+  if(req.session.user==="admin"){
     res.sendFile(path.join(__dirname,"admin.html"));
   } else {
     res.send("❌ Access Denied");
   }
 });
 
-// =========================
-// 🔐 AUTH
-// =========================
+/* =========================
+   AUTH
+========================= */
 
-// REGISTER
-app.post("/register", async (req,res)=>{
+/* REGISTER */
+app.post("/register",(req,res)=>{
+
+  let users = load("users.json");
+
   const { username, password } = req.body;
 
   if(!username || !password){
-    return res.json({status:"error"});
+    return res.json({status:"error", message:"Missing fields"});
   }
 
-  const exists = await User.findOne({ username });
+  const exists = users.find(u => u.username === username);
   if(exists) return res.json({status:"exists"});
 
-  const hashed = await bcrypt.hash(password,10);
-
-  await User.create({
+  const user = {
     username,
-    password: hashed,
-    face:null,
+    password,
+    face: null,
     time:new Date().toLocaleString()
-  });
+  };
+
+  users.push(user);
+  save("users.json",users);
 
   console.log("✅ Registered:", username);
+
   res.json({status:"registered"});
 });
 
-// LOGIN
-app.post("/login", async (req,res)=>{
+/* LOGIN */
+app.post("/login",(req,res)=>{
+
+  let users = load("users.json");
+
   const { username, password } = req.body;
 
-  const user = await User.findOne({ username });
-  if(!user) return res.json({status:"fail"});
+  const user = users.find(u =>
+    u.username === username && u.password === password
+  );
 
-  const match = await bcrypt.compare(password, user.password);
+  if(user){
+    req.session.user = user.username;
 
-  if(match){
-    req.session.user = username;
+    console.log("✅ Login:", user.username);
 
-    console.log("✅ Login:", username);
-
-    if(username === "admin"){
+    if(user.username==="admin"){
       return res.json({status:"admin"});
     } else {
       return res.json({status:"user"});
@@ -139,98 +120,119 @@ app.post("/login", async (req,res)=>{
   res.json({status:"fail"});
 });
 
-// FACE LOGIN (kept your feature)
-app.post("/face-login", async (req,res)=>{
+/* FACE LOGIN */
+app.post("/face-login",(req,res)=>{
   const { username } = req.body;
 
-  const user = await User.findOne({ username });
+  let users = load("users.json");
 
-  if(user && user.face !== null){
-    req.session.user = username;
+  const user = users.find(u => u.username === username && u.face !== null);
+
+  if(user){
+    req.session.user = user.username;
     return res.json({status:"success"});
   }
 
   res.json({status:"fail"});
 });
 
-// LOGOUT
+/* LOGOUT */
 app.get("/logout",(req,res)=>{
   req.session.destroy(()=>res.redirect("/"));
 });
 
-// =========================
-// 📊 CATEGORY
-// =========================
-app.post("/category", async (req,res)=>{
+/* =========================
+   CATEGORY
+========================= */
+app.post("/category",(req,res)=>{
+
+  let dataArr = load("category.json");
+
   const data = {
     ...req.body,
     user:req.session.user || "guest",
     time:new Date().toLocaleString()
   };
 
-  await Category.create(data);
+  dataArr.push(data);
+  save("category.json",dataArr);
 
   res.json({ok:true});
 });
 
-// =========================
-// 🚨 SOS (REAL-TIME)
-// =========================
-app.post("/sos", async (req,res)=>{
+/* =========================
+   SOS
+========================= */
+app.post("/sos",(req,res)=>{
+
+  let dataArr = load("sos.json");
+
   const data = {
     ...req.body,
     user:req.session.user || "guest",
     time:new Date().toLocaleString()
   };
 
-  await SOS.create(data);
+  dataArr.push(data);
+  save("sos.json",dataArr);
 
-  console.log("🚨 SOS:", data.user);
-
-  io.emit("newSOS", data); // 🔴 LIVE ALERT
+  console.log("🚨 SOS Sent");
 
   res.json({ok:true});
 });
 
-// =========================
-// 📍 TRACK (REAL-TIME)
-// =========================
-app.post("/track", async (req,res)=>{
+/* =========================
+   TRACK
+========================= */
+app.post("/track",(req,res)=>{
+
+  let dataArr = load("track.json");
+
   const data = {
     ...req.body,
     user:req.session.user || "guest",
     time:new Date().toLocaleString()
   };
 
-  await Track.create(data);
-
-  io.emit("newTrack", data);
+  dataArr.push(data);
+  save("track.json",dataArr);
 
   res.json({ok:true});
 });
 
-// =========================
-// 📡 ADMIN DATA API
-// =========================
-app.get("/data", async (req,res)=>{
-  const users = await User.find();
-  const sos = await SOS.find();
-  const track = await Track.find();
-  const category = await Category.find();
+/* =========================
+   ADMIN SECURITY
+========================= */
 
-  res.json({ users, sos, track, category });
+function isAdmin(req,res,next){
+  if(req.session.user==="admin"){
+    next();
+  } else {
+    res.status(403).send("❌ Unauthorized");
+  }
+}
+
+/* ADMIN APIs */
+app.get("/admin/users", isAdmin, (req,res)=>{
+  res.json(load("users.json"));
 });
 
-// =========================
-// ⚡ SOCKET CONNECTION
-// =========================
-io.on("connection", socket=>{
-  console.log("⚡ Admin Connected");
+app.get("/admin/sos", isAdmin, (req,res)=>{
+  res.json(load("sos.json"));
 });
 
-// =========================
-// 🚀 START SERVER
-// =========================
-server.listen(PORT, ()=>{
-  console.log("🚀 Server running on port", PORT);
+app.get("/admin/track", isAdmin, (req,res)=>{
+  res.json(load("track.json"));
+});
+
+app.get("/admin/category", isAdmin, (req,res)=>{
+  res.json(load("category.json"));
+});
+
+/* =========================
+   START SERVER
+========================= */
+
+app.listen(PORT, ()=>{
+  console.log("🚀 Server running on http://localhost:"+PORT);
 });
