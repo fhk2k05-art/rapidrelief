@@ -4,7 +4,9 @@
 <title>RapidRelief Control System</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
@@ -18,9 +20,10 @@ body{
 
 /* SIDEBAR */
 .sidebar{
-  width:230px;
+  width:240px;
   background:#020617;
   padding:20px;
+  border-right:1px solid #1e293b;
 }
 
 .sidebar h2{
@@ -37,6 +40,11 @@ body{
   background:#1e293b;
   color:white;
   cursor:pointer;
+  transition:0.3s;
+}
+
+.sidebar button:hover{
+  background:#38bdf8;
 }
 
 /* MAIN */
@@ -45,11 +53,24 @@ body{
   padding:20px;
 }
 
+/* TOP BAR */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.live{
+  color:#22c55e;
+  font-weight:bold;
+}
+
 /* CARDS */
 .cards{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:15px;
+  margin-top:20px;
 }
 
 .card{
@@ -57,6 +78,14 @@ body{
   padding:20px;
   border-radius:12px;
   text-align:center;
+  box-shadow:0 0 10px rgba(56,189,248,0.2);
+}
+
+/* MAP */
+#adminMap{
+  height:300px;
+  margin-top:20px;
+  border-radius:12px;
 }
 
 /* CHART */
@@ -65,7 +94,6 @@ body{
   padding:20px;
   border-radius:12px;
   margin-top:20px;
-  text-align:center;
 }
 
 /* TABLE */
@@ -81,9 +109,16 @@ th,td{
   text-align:center;
 }
 
-/* ALERT HIGHLIGHT */
+/* ALERT */
 .alert{
   background:#7f1d1d;
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 5px red;}
+  50%{box-shadow:0 0 20px red;}
+  100%{box-shadow:0 0 5px red;}
 }
 
 /* BUTTON */
@@ -119,20 +154,24 @@ th,td{
 
 <div class="main">
 
-  <div style="display:flex;justify-content:space-between;">
-    <h1>🧠 Live Control Panel</h1>
+  <div class="topbar">
+    <h1>🧠 Control Panel</h1>
+    <div class="live">● LIVE</div>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
-  <!-- STATS -->
+  <!-- CARDS -->
   <div class="cards">
     <div class="card"><h3 id="u">0</h3><p>Users</p></div>
-    <div class="card"><h3 id="s">0</h3><p>SOS</p></div>
+    <div class="card"><h3 id="s">0</h3><p style="color:red;">SOS</p></div>
     <div class="card"><h3 id="t">0</h3><p>Tracking</p></div>
     <div class="card"><h3 id="c">0</h3><p>Category</p></div>
   </div>
 
-  <!-- DONUT CHART -->
+  <!-- MAP -->
+  <div id="adminMap"></div>
+
+  <!-- CHART -->
   <div class="chart-box">
     <canvas id="chart"></canvas>
   </div>
@@ -153,16 +192,24 @@ th,td{
 
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 
 let chart;
+let lastSOS = 0;
 
-/* 🌐 MAP NAV */
+/* MAP */
+let adminMap = L.map('adminMap').setView([10,76],7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
+
+/* MAP NAV */
 function openMap(lat,lon){
   window.open(`https://www.google.com/maps?q=${lat},${lon}`);
 }
 
-/* 📊 CHART */
+/* CHART */
 function updateChart(u,s,t,c){
   if(chart) chart.destroy();
 
@@ -172,20 +219,16 @@ function updateChart(u,s,t,c){
       labels:["Users","SOS","Tracking","Category"],
       datasets:[{
         data:[u,s,t,c],
-        backgroundColor:[
-          "#38bdf8","#ef4444","#22c55e","#f59e0b"
-        ]
+        backgroundColor:["#38bdf8","#ef4444","#22c55e","#f59e0b"]
       }]
     },
     options:{
-      plugins:{
-        legend:{ labels:{ color:"white" } }
-      }
+      plugins:{legend:{labels:{color:"white"}}}
     }
   });
 }
 
-/* 📋 TABLE */
+/* TABLE */
 function render(data){
 
   const tbody=document.querySelector("#table tbody");
@@ -193,30 +236,36 @@ function render(data){
 
   data.slice().reverse().forEach((d,i)=>{
 
-    let lat=d.lat||"-";
-    let lon=d.lon||"-";
-    let user=d.user||"Unknown";
-    let time=d.time||"-";
-
     let row=document.createElement("tr");
 
-    if(i===0) row.classList.add("alert"); // highlight latest
+    if(i===0) row.classList.add("alert");
 
     row.innerHTML=`
-      <td>${user}</td>
-      <td>${lat}</td>
-      <td>${lon}</td>
-      <td>${time}</td>
-      <td>
-        ${lat!=="-"?`<button class="nav-btn" onclick="openMap(${lat},${lon})">📍 Go</button>`:"-"}
-      </td>
+      <td>${d.user||"Unknown"}</td>
+      <td>${d.lat||"-"}</td>
+      <td>${d.lon||"-"}</td>
+      <td>${d.time||"-"}</td>
+      <td>${d.lat?`<button class="nav-btn" onclick="openMap(${d.lat},${d.lon})">📍</button>`:"-"}</td>
     `;
 
     tbody.appendChild(row);
   });
 }
 
-/* 🔄 LIVE REFRESH */
+/* MAP PLOT */
+function plotMap(data){
+  adminMap.eachLayer(layer=>{
+    if(layer instanceof L.Marker) adminMap.removeLayer(layer);
+  });
+
+  data.forEach(d=>{
+    if(d.lat && d.lon){
+      L.marker([d.lat,d.lon]).addTo(adminMap);
+    }
+  });
+}
+
+/* LIVE REFRESH */
 function refreshAll(){
 
   Promise.all([
@@ -234,22 +283,26 @@ function refreshAll(){
 
     updateChart(u.length,s.length,t.length,c.length);
 
-    // show latest important data
     render([...s,...t]);
+    plotMap([...s,...t]);
+
+    /* 🚨 ALERT SOUND */
+    if(s.length > lastSOS){
+      new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+    }
+    lastSOS = s.length;
+
   });
 }
 
-/* BUTTON LOADS */
 function loadUsers(){ fetch("/admin/users").then(r=>r.json()).then(render); }
 function loadSOS(){ fetch("/admin/sos").then(r=>r.json()).then(render); }
 function loadTrack(){ fetch("/admin/track").then(r=>r.json()).then(render); }
 function loadCategory(){ fetch("/admin/category").then(r=>r.json()).then(render); }
 
-/* AUTO LIVE */
-setInterval(refreshAll, 5000); // every 5 sec
+setInterval(refreshAll,5000);
 refreshAll();
 
-/* LOGOUT */
 function logout(){
   window.location="/logout";
 }
